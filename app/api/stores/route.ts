@@ -46,16 +46,6 @@ export async function POST(request: NextRequest) {
     }
 
     const store = await connectStore(user.id, body);
-
-    if (body.platform !== "Trendyol") {
-      const { syncMarketplaceStore } = await import("@/lib/marketplace-sync");
-      const syncResult = await syncMarketplaceStore(user.id, store.id);
-      return NextResponse.json({
-        store: syncResult.store,
-        message: `${body.platform} mağazası bağlandı. Siparişler pazaryerinden düştüğünde Yenile ile görünür.`,
-      });
-    }
-
     return NextResponse.json({ store, message: "Mağaza başarıyla bağlandı." });
   } catch (error) {
     return NextResponse.json(

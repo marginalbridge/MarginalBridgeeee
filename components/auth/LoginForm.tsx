@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 
@@ -37,6 +38,8 @@ export function LoginForm({
   initialError,
   redirectUriHint,
 }: LoginFormProps) {
+  const router = useRouter();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(
@@ -55,7 +58,6 @@ export function LoginForm({
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "same-origin",
         body: JSON.stringify({ email, password }),
       });
 
@@ -67,11 +69,11 @@ export function LoginForm({
       }
 
       if (data.user.role === "admin") {
-        window.location.href = "/admin";
+        router.push("/admin");
       } else {
-        window.location.href = redirect;
+        router.push(redirect);
       }
-      return;
+      router.refresh();
     } catch {
       setError("Bağlantı hatası. Tekrar deneyin.");
     } finally {

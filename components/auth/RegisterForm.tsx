@@ -34,7 +34,6 @@ export function RegisterForm({ planId }: RegisterFormProps) {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "same-origin",
         body: JSON.stringify({
           name,
           company,
@@ -52,7 +51,7 @@ export function RegisterForm({ planId }: RegisterFormProps) {
       }
 
       setSuccess(data.message);
-      window.location.href = "/dashboard";
+      setTimeout(() => router.push("/dashboard"), 1500);
     } catch {
       setError("Bağlantı hatası. Tekrar deneyin.");
     } finally {

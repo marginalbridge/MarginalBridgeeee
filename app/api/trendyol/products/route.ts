@@ -2,6 +2,8 @@ import { canAccessDashboard, getCurrentUser } from "@/lib/auth";
 import { findStoreByPlatform } from "@/lib/stores-db";
 import {
   fetchTrendyolProductsWithFallback,
+  getTrendyolMockProducts,
+  getTrendyolProductsForUser,
   saveTrendyolProductsForUser,
 } from "@/lib/trendyol-mock";
 import { NextResponse } from "next/server";
@@ -30,8 +32,8 @@ export async function GET() {
       return NextResponse.json({
         success: true,
         mockMode: true,
-        message: "Trendyol mağazası bağlı değil.",
-        products: [],
+        message: "Trendyol mağazası bağlı değil; test ürünleri döndürülüyor.",
+        products: getTrendyolProductsForUser(user.id),
       });
     }
 
@@ -51,7 +53,7 @@ export async function GET() {
       success: true,
       mockMode,
       message: mockMode
-        ? "Trendyol ürün API yanıt vermedi."
+        ? "Trendyol API geçici olarak kullanılamıyor; MarginalBridge test ürünleri gösteriliyor."
         : "Trendyol ürünleri başarıyla alındı.",
       products,
       store: {
@@ -62,10 +64,10 @@ export async function GET() {
     });
   } catch {
     return NextResponse.json({
-      success: false,
+      success: true,
       mockMode: true,
-      message: "Trendyol ürün API hatası.",
-      products: [],
+      message: "Trendyol API hatası; MarginalBridge test ürünleri gösteriliyor.",
+      products: getTrendyolMockProducts(),
     });
   }
 }

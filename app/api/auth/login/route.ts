@@ -1,5 +1,4 @@
 import { authenticateUser } from "@/lib/auth";
-import { sanitizeDbError } from "@/lib/db/config";
 import { createSession } from "@/lib/session";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -47,10 +46,10 @@ export async function POST(request: NextRequest) {
     await createSession(user.id);
 
     return NextResponse.json({ success: true, user });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
-      { error: sanitizeDbError(error) },
-      { status: 503 }
+      { error: "Giriş işlemi başarısız." },
+      { status: 500 }
     );
   }
 }
