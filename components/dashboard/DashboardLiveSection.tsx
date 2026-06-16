@@ -2,11 +2,15 @@ import { BotActivityFeed } from "@/components/dashboard/BotActivityFeed";
 
 import { CostMatrixPanel } from "@/components/dashboard/CostMatrixPanel";
 
+import { CostMatrixSimulator } from "@/components/dashboard/CostMatrixSimulator";
+
 import { OrdersTable } from "@/components/dashboard/OrdersTable";
 
 import { StatCards } from "@/components/dashboard/StatCards";
 
 import { getDashboardStats } from "@/lib/dashboard-stats";
+
+import { getCriticalMetrics, getLogisticsSummary } from "@/lib/critical-metrics";
 
 import type { BotLog, Order } from "@/types";
 
@@ -36,6 +40,8 @@ export function DashboardLiveSection({
 
   const stats = getDashboardStats(orders);
 
+  const critical = getCriticalMetrics(orders);
+
   const featuredOrder = orders[0] ?? null;
 
 
@@ -43,6 +49,14 @@ export function DashboardLiveSection({
   return (
 
     <>
+
+      <section className="mb-8">
+
+        <CostMatrixSimulator />
+
+      </section>
+
+
 
       <section className="mb-8">
 
@@ -57,6 +71,12 @@ export function DashboardLiveSection({
           totalRevenueTl={stats.totalRevenueTl}
 
           avgMarginPercent={stats.avgMarginPercent}
+
+          criticalStockAndStoppedBots={critical.criticalStockAndStoppedBots}
+
+          logisticsCustomsInTransit={critical.logisticsCustomsInTransit}
+
+          logisticsSummary={getLogisticsSummary()}
 
         />
 
@@ -94,11 +114,11 @@ export function DashboardLiveSection({
 
         ) : (
 
-          <div className="glass-card flex min-h-[320px] items-center justify-center p-8 text-center">
+          <div className="glass-card flex min-h-[320px] items-center justify-center p-8 text-center" id="matrix">
 
             <div>
 
-              <p className="font-medium text-gray-900">Maliyet Matrisi</p>
+              <p className="font-medium text-gray-900">Sipariş Maliyet Matrisi</p>
 
               <p className="mt-2 text-sm text-gray-600">
 
@@ -106,7 +126,7 @@ export function DashboardLiveSection({
 
                   ? "İlk sipariş senkronize edildiğinde maliyet dökümü burada açılır."
 
-                  : "Mağaza bağlayıp senkronize edin."}
+                  : "Üstteki simülatörü kullanabilir veya mağaza bağlayıp senkronize edebilirsiniz."}
 
               </p>
 
@@ -143,5 +163,4 @@ export function DashboardLiveSection({
   );
 
 }
-
 

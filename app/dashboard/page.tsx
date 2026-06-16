@@ -6,9 +6,11 @@ import { MarketplaceHub } from "@/components/dashboard/MarketplaceHub";
 
 import { PendingAccess } from "@/components/dashboard/PendingAccess";
 
+import { BotControl } from "@/components/dashboard/BotControl";
+
 import { RepricerSimulator } from "@/components/dashboard/RepricerSimulator";
 
-import { Sidebar } from "@/components/dashboard/Sidebar";
+import { SidebarShell } from "@/components/dashboard/SidebarShell";
 
 import { UnifiedCatalogPanel } from "@/components/dashboard/UnifiedCatalogPanel";
 
@@ -77,7 +79,7 @@ export default async function DashboardPage() {
 
     <div className="min-h-screen">
 
-      <Sidebar user={user} />
+      <SidebarShell user={user} />
 
 
 
@@ -176,6 +178,14 @@ export default async function DashboardPage() {
               <section className="mb-8" id="gtip">
 
                 <GtipMatrix />
+
+              </section>
+
+
+
+              <section className="mb-8" id="bot-control">
+
+                <BotControl />
 
               </section>
 
