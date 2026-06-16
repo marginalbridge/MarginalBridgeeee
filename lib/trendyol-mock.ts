@@ -76,12 +76,12 @@ export function saveTrendyolProductsForUser(
 }
 
 export function getTrendyolProductsForUser(userId: string): TrendyolProduct[] {
-  return globalTrendyolCache.__marginalBridgeTrendyolProducts?.[userId] ?? [];
+  return globalTrendyolCache.__marginalBridgeTrendyolProducts?.[userId] ?? getTrendyolMockProducts();
 }
 
 export function normalizeTrendyolProducts(payload: unknown): TrendyolProduct[] {
   if (!payload || typeof payload !== "object") {
-    return [];
+    return getTrendyolMockProducts();
   }
 
   const data = payload as Record<string, unknown>;
@@ -94,7 +94,7 @@ export function normalizeTrendyolProducts(payload: unknown): TrendyolProduct[] {
         : [];
 
   if (items.length === 0) {
-    return [];
+    return getTrendyolMockProducts();
   }
 
   return items.slice(0, 20).map((item, index) => {
@@ -139,7 +139,7 @@ export async function fetchTrendyolProductsWithFallback(input: {
 
     if (!response.ok) {
       return {
-        products: [],
+        products: getTrendyolMockProducts(),
         mockMode: true,
         source: "mock",
       };
@@ -148,9 +148,9 @@ export async function fetchTrendyolProductsWithFallback(input: {
     const payload = await response.json();
     const normalized = normalizeTrendyolProducts(payload);
 
-    if (itemsEmpty(payload) || normalized.length === 0) {
+    if (itemsEmpty(payload)) {
       return {
-        products: [],
+        products: getTrendyolMockProducts(),
         mockMode: true,
         source: "mock",
       };
@@ -163,7 +163,7 @@ export async function fetchTrendyolProductsWithFallback(input: {
     };
   } catch {
     return {
-      products: [],
+      products: getTrendyolMockProducts(),
       mockMode: true,
       source: "mock",
     };

@@ -96,58 +96,6 @@ async function initSchema(): Promise<void> {
     )
   `;
 
-  await sql`
-    CREATE TABLE IF NOT EXISTS marketplace_orders (
-      id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      store_id TEXT REFERENCES connected_stores(id) ON DELETE CASCADE,
-      order_number TEXT NOT NULL,
-      marketplace TEXT NOT NULL,
-      product_name TEXT NOT NULL,
-      product_cost_usd NUMERIC NOT NULL,
-      weight_desi NUMERIC NOT NULL,
-      category TEXT NOT NULL,
-      status TEXT NOT NULL,
-      final_price_tl NUMERIC NOT NULL,
-      competitor_price_tl NUMERIC NOT NULL,
-      ordered_at TIMESTAMPTZ NOT NULL,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `;
-
-  await sql`
-    CREATE TABLE IF NOT EXISTS bot_activity_logs (
-      id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      store_id TEXT REFERENCES connected_stores(id) ON DELETE SET NULL,
-      log_type TEXT NOT NULL,
-      title TEXT NOT NULL,
-      message TEXT NOT NULL,
-      logged_at TIMESTAMPTZ NOT NULL,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `;
-
-  await sql`
-    CREATE INDEX IF NOT EXISTS idx_marketplace_orders_user
-    ON marketplace_orders (user_id, ordered_at DESC)
-  `;
-
-  await sql`
-    CREATE INDEX IF NOT EXISTS idx_bot_activity_logs_user
-    ON bot_activity_logs (user_id, logged_at DESC)
-  `;
-
-  // Eski demo siparişleri (MB-2026-*) bir kez temizle
-  await sql`
-    DELETE FROM marketplace_orders
-    WHERE order_number LIKE 'MB-2026-%'
-  `;
-  await sql`
-    DELETE FROM bot_activity_logs
-    WHERE message LIKE '%MB-2026-%'
-  `;
-
   const adminEmail = "admin@marginalbridge.com";
   const existing = await sql`SELECT id FROM users WHERE email = ${adminEmail} LIMIT 1`;
 

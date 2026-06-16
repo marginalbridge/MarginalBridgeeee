@@ -1,5 +1,320 @@
-export const GTIP_MATRIX_VERSION = 7;
+import type { GtipEntry } from "@/types/gtip";
+
+export const GTIP_MATRIX_VERSION = 6;
 export const GTIP_TARIFF_YEAR = 2026;
-export const GTIP_ENTRY_COUNT = 15717;
 export const GTIP_SOURCE = "Türk Gümrük Tarife Cetveli (Karar Sayısı: 10781, RG 30.12.2025/33123)";
-export const GTIP_DATA_FILE = "data/gtip-2026-full.json";
+
+export const GTIP_ENTRIES: GtipEntry[] = [
+  {
+    "code": "851830000000",
+    "description": "Kulaklıklar ve başa takılan hoparlörler (mikrofonlu/mikrofonsuz)",
+    "chapter": "85 - Elektrikli makine ve cihazlar",
+    "unit": "Adet",
+    "customsDutyRate": 0,
+    "additionalDutyRate": 0,
+    "kdvRate": 0.2,
+    "keywords": [
+      "kulaklık",
+      "earbuds",
+      "headphone",
+      "bluetooth",
+      "elektronik"
+    ],
+    "year": 2026,
+    "source": "Türk Gümrük Tarife Cetveli (Karar Sayısı: 10781, RG 30.12.2025/33123)"
+  },
+  {
+    "code": "851762000000",
+    "description": "Ses, görüntü veya veri alıcı veya iletici cihazlar (kablosuz ağ)",
+    "chapter": "85 - Elektrikli makine ve cihazlar",
+    "unit": "Adet",
+    "customsDutyRate": 0,
+    "additionalDutyRate": 0,
+    "kdvRate": 0.2,
+    "keywords": [
+      "router",
+      "wifi",
+      "modem",
+      "ağ",
+      "elektronik"
+    ],
+    "year": 2026,
+    "source": "Türk Gümrük Tarife Cetveli (Karar Sayısı: 10781, RG 30.12.2025/33123)"
+  },
+  {
+    "code": "847130000000",
+    "description": "Taşınabilir otomatik veri işlem makineleri (dizüstü bilgisayar)",
+    "chapter": "84 - Nükleer reaktörler, kazanlar, makinalar",
+    "unit": "Adet",
+    "customsDutyRate": 0,
+    "additionalDutyRate": 0,
+    "kdvRate": 0.2,
+    "keywords": [
+      "laptop",
+      "notebook",
+      "bilgisayar",
+      "dizüstü"
+    ],
+    "year": 2026,
+    "source": "Türk Gümrük Tarife Cetveli (Karar Sayısı: 10781, RG 30.12.2025/33123)"
+  },
+  {
+    "code": "330499000000",
+    "description": "Diğer güzellik veya makyaj müstahzarları",
+    "chapter": "33 - Uçucu yağlar ve kozmetik",
+    "unit": "Kg",
+    "customsDutyRate": 0,
+    "additionalDutyRate": 0,
+    "kdvRate": 0.2,
+    "keywords": [
+      "kozmetik",
+      "serum",
+      "krem",
+      "makyaj",
+      "cosmetic",
+      "cilt"
+    ],
+    "year": 2026,
+    "source": "Türk Gümrük Tarife Cetveli (Karar Sayısı: 10781, RG 30.12.2025/33123)"
+  },
+  {
+    "code": "330510000000",
+    "description": "Saç şampuanları",
+    "chapter": "33 - Uçucu yağlar ve kozmetik",
+    "unit": "Kg",
+    "customsDutyRate": 0,
+    "additionalDutyRate": 0,
+    "kdvRate": 0.2,
+    "keywords": [
+      "şampuan",
+      "saç",
+      "shampoo"
+    ],
+    "year": 2026,
+    "source": "Türk Gümrük Tarife Cetveli (Karar Sayısı: 10781, RG 30.12.2025/33123)"
+  },
+  {
+    "code": "610910000000",
+    "description": "Pamuktan tişörtler, atletler ve diğer fanilalar",
+    "chapter": "61 - Örme giyim eşyası",
+    "unit": "Adet",
+    "customsDutyRate": 0.12,
+    "additionalDutyRate": 0,
+    "kdvRate": 0.1,
+    "keywords": [
+      "tişört",
+      "tshirt",
+      "giyim",
+      "pamuk",
+      "hoodie"
+    ],
+    "year": 2026,
+    "source": "Türk Gümrük Tarife Cetveli (Karar Sayısı: 10781, RG 30.12.2025/33123)"
+  },
+  {
+    "code": "611020910000",
+    "description": "Pamuktan kazaklar, süveterler (kadın/çocuk)",
+    "chapter": "61 - Örme giyim eşyası",
+    "unit": "Adet",
+    "customsDutyRate": 0.12,
+    "additionalDutyRate": 0,
+    "kdvRate": 0.1,
+    "keywords": [
+      "kazak",
+      "süveter",
+      "sweater",
+      "giyim"
+    ],
+    "year": 2026,
+    "source": "Türk Gümrük Tarife Cetveli (Karar Sayısı: 10781, RG 30.12.2025/33123)"
+  },
+  {
+    "code": "640299960000",
+    "description": "Diğer ayakkabılar (dış tabanı kauçuk/plastik)",
+    "chapter": "64 - Ayakkabılık",
+    "unit": "Çift",
+    "customsDutyRate": 0.17,
+    "additionalDutyRate": 0,
+    "kdvRate": 0.1,
+    "keywords": [
+      "ayakkabı",
+      "sneaker",
+      "shoe",
+      "spor"
+    ],
+    "year": 2026,
+    "source": "Türk Gümrük Tarife Cetveli (Karar Sayısı: 10781, RG 30.12.2025/33123)"
+  },
+  {
+    "code": "950300990000",
+    "description": "Diğer oyuncaklar (plastik veya diğer maddelerden)",
+    "chapter": "95 - Oyuncaklar ve spor malzemeleri",
+    "unit": "Adet",
+    "customsDutyRate": 0,
+    "additionalDutyRate": 0,
+    "kdvRate": 0.2,
+    "keywords": [
+      "oyuncak",
+      "toy",
+      "çocuk",
+      "lego"
+    ],
+    "year": 2026,
+    "source": "Türk Gümrük Tarife Cetveli (Karar Sayısı: 10781, RG 30.12.2025/33123)"
+  },
+  {
+    "code": "950691900000",
+    "description": "Diğer spor veya açık hava oyunları malzemeleri",
+    "chapter": "95 - Oyuncaklar ve spor malzemeleri",
+    "unit": "Adet",
+    "customsDutyRate": 0,
+    "additionalDutyRate": 0,
+    "kdvRate": 0.2,
+    "keywords": [
+      "yoga",
+      "mat",
+      "spor",
+      "fitness",
+      "dambıl"
+    ],
+    "year": 2026,
+    "source": "Türk Gümrük Tarife Cetveli (Karar Sayısı: 10781, RG 30.12.2025/33123)"
+  },
+  {
+    "code": "940540910000",
+    "description": "LED lambalar ve aydınlatma armatürleri",
+    "chapter": "94 - Mobilya ve aydınlatma",
+    "unit": "Adet",
+    "customsDutyRate": 0.025,
+    "additionalDutyRate": 0,
+    "kdvRate": 0.2,
+    "keywords": [
+      "lamba",
+      "led",
+      "masa lambası",
+      "aydınlatma",
+      "desk"
+    ],
+    "year": 2026,
+    "source": "Türk Gümrük Tarife Cetveli (Karar Sayısı: 10781, RG 30.12.2025/33123)"
+  },
+  {
+    "code": "392410000000",
+    "description": "Sofra ve mutfak eşyası (plastikten)",
+    "chapter": "39 - Plastikler",
+    "unit": "Kg",
+    "customsDutyRate": 0.065,
+    "additionalDutyRate": 0,
+    "kdvRate": 0.2,
+    "keywords": [
+      "mutfak",
+      "plastik",
+      "bardak",
+      "tabak",
+      "ev"
+    ],
+    "year": 2026,
+    "source": "Türk Gümrük Tarife Cetveli (Karar Sayısı: 10781, RG 30.12.2025/33123)"
+  },
+  {
+    "code": "420222100000",
+    "description": "Plastik yüzeyli el çantaları",
+    "chapter": "42 - Deri eşya ve çantalar",
+    "unit": "Adet",
+    "customsDutyRate": 0.035,
+    "additionalDutyRate": 0,
+    "kdvRate": 0.2,
+    "keywords": [
+      "çanta",
+      "bag",
+      "sırt çantası",
+      "backpack"
+    ],
+    "year": 2026,
+    "source": "Türk Gümrük Tarife Cetveli (Karar Sayısı: 10781, RG 30.12.2025/33123)"
+  },
+  {
+    "code": "910211000000",
+    "description": "Elektronik göstergeli kol saatleri (kıymetli metal)",
+    "chapter": "91 - Saatler",
+    "unit": "Adet",
+    "customsDutyRate": 0,
+    "additionalDutyRate": 0,
+    "kdvRate": 0.2,
+    "keywords": [
+      "saat",
+      "watch",
+      "akıllı saat",
+      "smartwatch"
+    ],
+    "year": 2026,
+    "source": "Türk Gümrük Tarife Cetveli (Karar Sayısı: 10781, RG 30.12.2025/33123)"
+  },
+  {
+    "code": "854442900000",
+    "description": "Diğer elektrik iletkenleri (voltaj ≤1000V, konnektörlü)",
+    "chapter": "85 - Elektrikli makine ve cihazlar",
+    "unit": "Kg",
+    "customsDutyRate": 0,
+    "additionalDutyRate": 0,
+    "kdvRate": 0.2,
+    "keywords": [
+      "kablo",
+      "şarj",
+      "usb-c",
+      "cable",
+      "charger"
+    ],
+    "year": 2026,
+    "source": "Türk Gümrük Tarife Cetveli (Karar Sayısı: 10781, RG 30.12.2025/33123)"
+  },
+  {
+    "code": "080810800000",
+    "description": "Elma (taze)",
+    "chapter": "08 - Yenilebilir meyveler",
+    "unit": "Kg",
+    "customsDutyRate": 0.454,
+    "additionalDutyRate": 0,
+    "kdvRate": 0.01,
+    "keywords": [
+      "elma",
+      "apple",
+      "meyve"
+    ],
+    "year": 2026,
+    "source": "Türk Gümrük Tarife Cetveli (Karar Sayısı: 10781, RG 30.12.2025/33123)"
+  },
+  {
+    "code": "090121000000",
+    "description": "Kavrulmamış kahve (kafeinsiz)",
+    "chapter": "09 - Kahve, çay ve baharat",
+    "unit": "Kg",
+    "customsDutyRate": 0,
+    "additionalDutyRate": 0,
+    "kdvRate": 0.01,
+    "keywords": [
+      "kahve",
+      "coffee",
+      "çekirdek"
+    ],
+    "year": 2026,
+    "source": "Türk Gümrük Tarife Cetveli (Karar Sayısı: 10781, RG 30.12.2025/33123)"
+  },
+  {
+    "code": "721420000000",
+    "description": "Demir veya alaşımsız çelikten diğer çubuklar",
+    "chapter": "72 - Demir ve çelik",
+    "unit": "Kg",
+    "customsDutyRate": 0,
+    "additionalDutyRate": 0,
+    "kdvRate": 0.2,
+    "keywords": [
+      "çelik",
+      "demir",
+      "çubuk",
+      "steel"
+    ],
+    "year": 2026,
+    "source": "Türk Gümrük Tarife Cetveli (Karar Sayısı: 10781, RG 30.12.2025/33123)"
+  }
+];

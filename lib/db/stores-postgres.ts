@@ -198,29 +198,19 @@ export async function pgSyncStore(id: string, userId: string): Promise<PublicSto
     WHERE id = ${id} AND user_id = ${userId}
   `;
 
-  const { syncMarketplaceStore } = await import("@/lib/marketplace-sync");
-  const result = await syncMarketplaceStore(userId, id);
-  return result.store;
-}
+  await new Promise((resolve) => setTimeout(resolve, 900));
 
-export async function pgUpdateStoreMetrics(
-  id: string,
-  userId: string,
-  metrics: { productCount: number; orderCount: number; lastSyncAt: string }
-): Promise<PublicStore | null> {
-  const current = await pgFindStoreById(id, userId);
-  if (!current) return null;
-
-  await ensureSchema();
-  const sql = getSql();
+  const now = new Date().toISOString();
+  const productCount = Math.floor(Math.random() * 400) + 50;
+  const orderCount = Math.floor(Math.random() * 80) + 5;
 
   await sql`
     UPDATE connected_stores SET
       status = 'connected',
-      product_count = ${metrics.productCount},
-      order_count = ${metrics.orderCount},
-      last_sync_at = ${metrics.lastSyncAt},
-      updated_at = ${metrics.lastSyncAt}
+      last_sync_at = ${now},
+      product_count = ${productCount},
+      order_count = ${orderCount},
+      updated_at = ${now}
     WHERE id = ${id} AND user_id = ${userId}
   `;
 

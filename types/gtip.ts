@@ -57,14 +57,3 @@ export interface GtipSyncStatus {
   syncedAt: string;
   message: string;
 }
-
-export interface GtipAiSuggestion {
-  code: string;
-  description: string;
-  chapter: string;
-  customsDutyPercent: number;
-  kdvPercent: number;
-  estimatedExtraCostPercent: number;
-  confidence: number;
-  matchReason: string;
-}

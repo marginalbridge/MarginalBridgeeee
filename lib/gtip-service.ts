@@ -1,23 +1,11 @@
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
+import gtipSeed from "@/lib/data/gtip-2026.json";
 import { fetchUsdTryRate } from "@/lib/tcmb";
 import type { GtipEntry } from "@/types/gtip";
 
-export const GTIP_SYNC_VERSION = 7;
-export const GTIP_MATRIX_VERSION = 7;
-export const GTIP_TARIFF_YEAR = 2026;
-export const GTIP_SOURCE =
-  "Türk Gümrük Tarife Cetveli (Karar Sayısı: 10781, RG 30.12.2025/33123)";
+export const GTIP_SYNC_VERSION = 5;
 
 interface GtipSeedFile {
-  meta: {
-    year: number;
-    version?: number;
-    source: string;
-    description?: string;
-    entryCount?: number;
-  };
+  meta: { year: number; source: string; description?: string };
   entries: Omit<GtipEntry, "year" | "source">[];
 }
 
@@ -27,45 +15,22 @@ interface GtipCacheFile {
   exchangeDate: string;
   exchangeSource: string;
   entries: GtipEntry[];
-  total: number;
 }
 
 type GtipGlobal = typeof globalThis & {
   __marginalBridgeGtipCache?: GtipCacheFile | null;
-  __marginalBridgeGtipEntries?: GtipEntry[] | null;
 };
 
 const g = globalThis as GtipGlobal;
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 
-function resolveDataPath(): string {
-  const here = path.dirname(fileURLToPath(import.meta.url));
-  const candidates = [
-    path.join(here, "..", "data", "gtip-2026-full.json"),
-    path.join(process.cwd(), "data", "gtip-2026-full.json"),
-  ];
-  for (const candidate of candidates) {
-    if (fs.existsSync(candidate)) return candidate;
-  }
-  throw new Error("GTIP veri dosyasi bulunamadi: data/gtip-2026-full.json");
-}
-
-function loadBundledEntries(): GtipEntry[] {
-  if (g.__marginalBridgeGtipEntries) {
-    return g.__marginalBridgeGtipEntries;
-  }
-
-  const raw = fs.readFileSync(resolveDataPath(), "utf8");
-  const seed = JSON.parse(raw) as GtipSeedFile;
-  const entries = seed.entries.map((entry) => ({
+export function getBundledGtipEntries(): GtipEntry[] {
+  const seed = gtipSeed as GtipSeedFile;
+  return seed.entries.map((entry) => ({
     ...entry,
-    keywords: Array.isArray(entry.keywords) ? entry.keywords : [],
     year: seed.meta.year,
-    source: GTIP_SOURCE,
+    source: seed.meta.source,
   }));
-
-  g.__marginalBridgeGtipEntries = entries;
-  return entries;
 }
 
 function getMemoryCache(): GtipCacheFile | null {
@@ -81,17 +46,13 @@ function isCacheFresh(cache: GtipCacheFile): boolean {
   return age <= CACHE_TTL_MS;
 }
 
-export function getBundledGtipEntries(): GtipEntry[] {
-  return loadBundledEntries();
-}
-
 export async function refreshGtipCache(force = false): Promise<GtipCacheFile> {
   const existing = getMemoryCache();
   if (existing && isCacheFresh(existing) && !force) {
     return existing;
   }
 
-  const entries = loadBundledEntries();
+  const entries = getBundledGtipEntries();
   const rate = await fetchUsdTryRate();
 
   const cache: GtipCacheFile = {
@@ -100,27 +61,26 @@ export async function refreshGtipCache(force = false): Promise<GtipCacheFile> {
     exchangeDate: rate.date,
     exchangeSource: rate.source,
     entries,
-    total: entries.length,
   };
 
   setMemoryCache(cache);
   return cache;
 }
 
+/** Matris listesi ve kur — asla boş dönmez. */
 export async function getGtipMatrixState(forceRefresh = false) {
   const cache = await refreshGtipCache(forceRefresh);
 
   return {
     syncVersion: GTIP_SYNC_VERSION,
-    matrixVersion: GTIP_MATRIX_VERSION,
-    tariffYear: GTIP_TARIFF_YEAR,
+    tariffYear: cache.entries[0]?.year ?? 2026,
     entries: cache.entries,
-    total: cache.total,
+    total: cache.entries.length,
     syncedAt: cache.syncedAt,
     exchangeRate: cache.exchangeRate,
     exchangeDate: cache.exchangeDate,
     exchangeSource: cache.exchangeSource,
-    source: GTIP_SOURCE,
+    source: "Türk Gümrük Tarife Cetveli 2026 + TCMB / yedek kur",
   };
 }
 
@@ -146,122 +106,29 @@ export async function getCachedExchangeRate(): Promise<{
   };
 }
 
-export function findGtipEntry(
-  code: string,
-  entries?: GtipEntry[]
-): GtipEntry | null {
+export function findGtipEntry(code: string, entries?: GtipEntry[]): GtipEntry | null {
   const normalized = code.replace(/\D/g, "");
-  const list = entries ?? loadBundledEntries();
+  const list = entries ?? getBundledGtipEntries();
   return (
     list.find((entry) => entry.code.replace(/\D/g, "") === normalized) ?? null
   );
 }
 
-function tokenize(query: string): string[] {
-  return query
-    .toLowerCase()
-    .replace(/[^\p{L}\p{N}\s]/gu, " ")
-    .split(/\s+/)
-    .filter((token) => token.length >= 2);
-}
-
-function scoreEntry(query: string, tokens: string[], entry: GtipEntry): number {
-  const haystack = [
-    entry.code,
-    entry.description,
-    entry.chapter,
-    ...entry.keywords,
-  ]
-    .join(" ")
-    .toLowerCase();
-
-  let score = 0;
-  const digits = query.replace(/\D/g, "");
-
-  if (digits.length >= 4 && entry.code.includes(digits)) score += 50;
-  if (digits.length >= 8 && entry.code.startsWith(digits.slice(0, 8))) {
-    score += 30;
-  }
-  if (query && haystack.includes(query.toLowerCase())) score += 25;
-
-  for (const token of tokens) {
-    if (entry.keywords.some((kw) => kw.includes(token))) score += 12;
-    if (haystack.includes(token)) score += 6;
-  }
-
-  return score;
-}
-
-export function searchGtipEntries(
-  query: string,
-  entries?: GtipEntry[],
-  options?: { limit?: number; offset?: number; chapter?: string }
-): GtipEntry[] {
-  const list = entries ?? loadBundledEntries();
-  const limit = options?.limit ?? 40;
-  const offset = options?.offset ?? 0;
-  const chapterFilter = options?.chapter?.trim();
-
-  const filteredByChapter = chapterFilter
-    ? list.filter((entry) => entry.chapter.startsWith(chapterFilter))
-    : list;
-
+export function searchGtipEntries(query: string, entries?: GtipEntry[]): GtipEntry[] {
+  const list = entries ?? getBundledGtipEntries();
   const q = query.trim().toLowerCase();
-  if (!q) {
-    return filteredByChapter.slice(offset, offset + limit);
-  }
+  if (!q) return list.slice(0, 30);
 
-  const tokens = tokenize(q);
+  const digits = q.replace(/\D/g, "");
 
-  return filteredByChapter
-    .map((entry) => ({ entry, score: scoreEntry(q, tokens, entry) }))
-    .filter((item) => item.score > 0)
-    .sort((a, b) => b.score - a.score || a.entry.code.localeCompare(b.entry.code))
-    .slice(offset, offset + limit)
-    .map((item) => item.entry);
-}
-
-export function countGtipMatches(
-  query: string,
-  entries?: GtipEntry[],
-  chapter?: string
-): number {
-  const list = entries ?? loadBundledEntries();
-  const chapterFilter = chapter?.trim();
-  const filteredByChapter = chapterFilter
-    ? list.filter((entry) => entry.chapter.startsWith(chapterFilter))
-    : list;
-
-  const q = query.trim().toLowerCase();
-  if (!q) return filteredByChapter.length;
-
-  const tokens = tokenize(q);
-  return filteredByChapter.filter(
-    (entry) => scoreEntry(q, tokens, entry) > 0
-  ).length;
-}
-
-export function listGtipChapters(entries?: GtipEntry[]): Array<{
-  id: string;
-  label: string;
-  count: number;
-}> {
-  const list = entries ?? loadBundledEntries();
-  const map = new Map<string, { label: string; count: number }>();
-
-  for (const entry of list) {
-    const id = entry.chapter.slice(0, 2);
-    const existing = map.get(id);
-    if (existing) {
-      existing.count += 1;
-    } else {
-      map.set(id, { label: entry.chapter, count: 1 });
-    }
-  }
-
-  return [...map.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([id, value]) => ({ id, label: value.label, count: value.count }));
+  return list
+    .filter((entry) => {
+      if (digits && entry.code.includes(digits)) return true;
+      if (entry.description.toLowerCase().includes(q)) return true;
+      if (entry.chapter.toLowerCase().includes(q)) return true;
+      return entry.keywords.some((kw) => kw.toLowerCase().includes(q));
+    })
+    .slice(0, 30);
 }
 
 export async function runGtipSync(force = true) {
@@ -269,12 +136,12 @@ export async function runGtipSync(force = true) {
   return {
     success: true as const,
     syncVersion: GTIP_SYNC_VERSION,
-    tariffYear: GTIP_TARIFF_YEAR,
-    entryCount: cache.total,
+    tariffYear: cache.entries[0]?.year ?? 2026,
+    entryCount: cache.entries.length,
     exchangeRate: cache.exchangeRate,
     exchangeDate: cache.exchangeDate,
     exchangeSource: cache.exchangeSource,
     syncedAt: cache.syncedAt,
-    message: `${cache.total} GTİP kodu ve kur (${cache.exchangeRate} TRY/USD, ${cache.exchangeSource}) güncellendi.`,
+    message: `${cache.entries.length} GTİP kodu ve kur (${cache.exchangeRate} TRY/USD, ${cache.exchangeSource}) güncellendi.`,
   };
 }
