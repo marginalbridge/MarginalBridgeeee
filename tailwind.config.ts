@@ -1,46 +1,54 @@
-import type { Config } from "tailwindcss";
+# MarginalBridge
 
-const config: Config = {
-  darkMode: "class",
-  content: [
-    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
-    "./components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./app/**/*.{js,ts,jsx,tsx,mdx}",
-  ],
-  theme: {
-    extend: {
-      colors: {
-        bridge: {
-          50: "#f0fdfa",
-          100: "#ccfbf1",
-          200: "#99f6e4",
-          300: "#5eead4",
-          400: "#2dd4bf",
-          500: "#14b8a6",
-          600: "#0d9488",
-          700: "#0f766e",
-          800: "#115e59",
-          900: "#134e4a",
-          950: "#042f2e",
-        },
-        surface: {
-          DEFAULT: "#f8fafc",
-          card: "#ffffff",
-          elevated: "#f1f5f9",
-          border: "#e2e8f0",
-        },
-      },
-      fontFamily: {
-        sans: ["system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
-        mono: ["ui-monospace", "Consolas", "monospace"],
-      },
-      boxShadow: {
-        glow: "0 0 40px -10px rgba(13, 148, 136, 0.2)",
-        card: "0 1px 3px 0 rgba(0,0,0,0.06), 0 1px 2px -1px rgba(0,0,0,0.06)",
-      },
-    },
-  },
-  plugins: [],
-};
+Premium B2B SaaS MVP for cross-border dropshipping sellers. Protects net profit margins with real-time customs duties, freight costs, marketplace commissions, and automated buybox repricing.
 
-export default config;
+## Stack
+
+- **Next.js 15** (App Router)
+- **TypeScript**
+- **Tailwind CSS**
+- **Lucide React**
+
+## Getting Started
+
+```bash
+npm install
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) — the landing page links to `/dashboard`.
+
+## Core Features
+
+### Dynamic Cost Matrix
+
+```
+Total Cost = Base Cost + Customs Tax + Shipping + Marketplace Commission
+```
+
+- USD/TRY exchange rate: **33** (fixed)
+- Customs: category-based (e.g. Electronics 20%, Cosmetics 40%)
+- Shipping: **$5 USD per desi**
+
+### Price Warrior (Buybox Repricer)
+
+- Minimum profit margin floor: **15%**
+- Auto-lowers price to **1 TL below competitor** when margin allows
+- Locks price and flags **Loss Prevented** when competitor would force sub-threshold pricing
+
+## API
+
+`POST /api/marginal-bot`
+
+```json
+{
+  "productCostUsd": 28.5,
+  "weightDesi": 1.2,
+  "category": "Electronics",
+  "marketplace": "Trendyol",
+  "currentPriceTl": 1900,
+  "competitorPriceTl": 1850
+}
+```
+
+`GET /api/marginal-bot` returns API documentation.

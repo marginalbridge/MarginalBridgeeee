@@ -1,0 +1,22 @@
+# Uygulama
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+SESSION_SECRET=degistirin-guclu-bir-secret
+
+# Postgres (Prisma KULLANILMIYOR — Neon serverless SQL)
+# Vercel'de POSTGRES_URL otomatik gelir — yanlış DATABASE_URL varsa silin veya düzeltin.
+# DATABASE_URL=
+# POSTGRES_URL=
+# USE_MEMORY_DB=1  # yalnızca yerel test (Vercel'de kalıcı değil)
+
+# Cron (Vercel GTİP/kur otomatik güncelleme — Production'da ayarlayın)
+# CRON_SECRET=guclu-rastgele-bir-deger
+# Google Cloud Console → OAuth 2.0 Client (Web)
+# Redirect URI: https://SITENIZ.vercel.app/api/auth/oauth/google/callback
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+
+# Apple Sign In (opsiyonel)
+APPLE_CLIENT_ID=
+APPLE_TEAM_ID=
+APPLE_KEY_ID=
+APPLE_PRIVATE_KEY=

@@ -1,40 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
+import { dirname } from "path";
+import { fileURLToPath } from "url";
+import { FlatCompat } from "@eslint/eslintrc";
 
-function hasSessionCookie(request: NextRequest): boolean {
-  return Boolean(request.cookies.get("mb_session")?.value);
-}
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+const compat = new FlatCompat({
+  baseDirectory: __dirname,
+});
 
-  if (
-    pathname.startsWith("/api/") ||
-    pathname.startsWith("/_next/") ||
-    pathname.includes(".")
-  ) {
-    return NextResponse.next();
-  }
+const eslintConfig = [...compat.extends("next/core-web-vitals", "next/typescript")];
 
-  const isProtected =
-    pathname.startsWith("/dashboard") || pathname.startsWith("/admin");
-  const isAuthPage = pathname === "/login" || pathname === "/register";
-  const isLoggedIn = hasSessionCookie(request);
-
-  if (isProtected && !isLoggedIn) {
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("redirect", pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  if (isAuthPage && isLoggedIn) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
-  }
-
-  return NextResponse.next();
-}
-
-export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|woff2?)$).*)",
-  ],
-};
+export default eslintConfig;
