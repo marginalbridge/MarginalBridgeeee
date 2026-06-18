@@ -16,6 +16,18 @@ export function getSql() {
   return neon(url);
 }
 
+async function safeSchemaStep(
+  label: string,
+  run: () => Promise<unknown>
+): Promise<void> {
+  try {
+    await run();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`[MarginalBridge:schema] ${label} hatası:`, message);
+  }
+}
+
 export async function ensureSchema(): Promise<void> {
   if (!isPostgresEnabled()) return;
 
@@ -32,7 +44,7 @@ export async function ensureSchema(): Promise<void> {
 async function initSchema(): Promise<void> {
   const sql = getSql();
 
-  await sql`
+  await safeSchemaStep("users", () => sql`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
       email TEXT UNIQUE NOT NULL,
@@ -49,14 +61,15 @@ async function initSchema(): Promise<void> {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
-  `;
+  `);
 
-  await sql`
+  await safeSchemaStep("users.preferences", () => sql`
     ALTER TABLE users
     ADD COLUMN IF NOT EXISTS preferences JSONB NOT NULL DEFAULT '{}'::jsonb
-  `;
+  `);
 
-  await sql`
+  await safeSchemaStep("connected_stores", () => sql`
+    CREATE TABLE IF NOT EXISTS connected_stores (
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       platform TEXT NOT NULL,
@@ -74,9 +87,9 @@ async function initSchema(): Promise<void> {
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       UNIQUE(user_id, platform)
     )
-  `;
+  `);
 
-  await sql`
+  await safeSchemaStep("catalog_products", () => sql`
     CREATE TABLE IF NOT EXISTS catalog_products (
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -90,17 +103,17 @@ async function initSchema(): Promise<void> {
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       UNIQUE(user_id, sku)
     )
-  `;
+  `);
 
-  await sql`
+  await safeSchemaStep("user_trendyol_products", () => sql`
     CREATE TABLE IF NOT EXISTS user_trendyol_products (
       user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
       products JSONB NOT NULL DEFAULT '[]'::jsonb,
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
-  `;
+  `);
 
-  await sql`
+  await safeSchemaStep("marketplace_orders", () => sql`
     CREATE TABLE IF NOT EXISTS marketplace_orders (
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -117,9 +130,9 @@ async function initSchema(): Promise<void> {
       ordered_at TIMESTAMPTZ NOT NULL,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
-  `;
+  `);
 
-  await sql`
+  await safeSchemaStep("bot_activity_logs", () => sql`
     CREATE TABLE IF NOT EXISTS bot_activity_logs (
       id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -130,50 +143,55 @@ async function initSchema(): Promise<void> {
       logged_at TIMESTAMPTZ NOT NULL,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
-  `;
+  `);
 
-  await sql`
+  await safeSchemaStep("idx_marketplace_orders_user", () => sql`
     CREATE INDEX IF NOT EXISTS idx_marketplace_orders_user
     ON marketplace_orders (user_id, ordered_at DESC)
-  `;
+  `);
 
-  await sql`
+  await safeSchemaStep("idx_bot_activity_logs_user", () => sql`
     CREATE INDEX IF NOT EXISTS idx_bot_activity_logs_user
     ON bot_activity_logs (user_id, logged_at DESC)
-  `;
+  `);
 
-  // Eski demo siparişleri (MB-2026-*) bir kez temizle
-  await sql`
+  await safeSchemaStep("cleanup_demo_orders", () => sql`
     DELETE FROM marketplace_orders
     WHERE order_number LIKE 'MB-2026-%'
-  `;
-  await sql`
+  `);
+
+  await safeSchemaStep("cleanup_demo_logs", () => sql`
     DELETE FROM bot_activity_logs
     WHERE message LIKE '%MB-2026-%'
-  `;
+  `);
 
   const adminEmail = "admin@marginalbridge.com";
-  const existing = await sql`SELECT id FROM users WHERE email = ${adminEmail} LIMIT 1`;
+  try {
+    const existing = await sql`SELECT id FROM users WHERE email = ${adminEmail} LIMIT 1`;
 
-  if (existing.length === 0) {
-    const bcrypt = await import("bcryptjs");
-    const passwordHash = await bcrypt.hash("Admin123!", 10);
-    await sql`
-      INSERT INTO users (
-        id, email, password_hash, name, company, role, status,
-        discount_percent, auth_provider, auth_provider_id
-      ) VALUES (
-        'admin-001',
-        ${adminEmail},
-        ${passwordHash},
-        'Sistem Yöneticisi',
-        'MarginalBridge',
-        'admin',
-        'active',
-        0,
-        'email',
-        NULL
-      )
-    `;
+    if (existing.length === 0) {
+      const bcrypt = await import("bcryptjs");
+      const passwordHash = await bcrypt.hash("Admin123!", 10);
+      await sql`
+        INSERT INTO users (
+          id, email, password_hash, name, company, role, status,
+          discount_percent, auth_provider, auth_provider_id
+        ) VALUES (
+          'admin-001',
+          ${adminEmail},
+          ${passwordHash},
+          'Sistem Yöneticisi',
+          'MarginalBridge',
+          'admin',
+          'active',
+          0,
+          'email',
+          NULL
+        )
+      `;
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[MarginalBridge:schema] admin seed hatası:", message);
   }
 }

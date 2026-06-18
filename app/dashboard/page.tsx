@@ -52,19 +52,26 @@ export default async function DashboardPage() {
 
   const hasAccess = canAccessDashboard(user);
 
-  const [orders, botLogs, stores] = hasAccess
+  let orders: Awaited<ReturnType<typeof listOrdersByUser>> = [];
+  let botLogs: Awaited<ReturnType<typeof listBotLogsByUser>> = [];
+  let stores: Awaited<ReturnType<typeof listStoresByUser>> = [];
+  let dataError = "";
 
-    ? await Promise.all([
-
+  if (hasAccess) {
+    try {
+      [orders, botLogs, stores] = await Promise.all([
         listOrdersByUser(user.id),
-
         listBotLogsByUser(user.id),
-
         listStoresByUser(user.id),
-
-      ])
-
-    : [[], [], []];
+      ]);
+    } catch (error) {
+      dataError =
+        error instanceof Error
+          ? error.message
+          : "Veriler yüklenirken hata oluştu.";
+      console.error("[dashboard] data load failed:", error);
+    }
+  }
 
 
 
@@ -114,6 +121,12 @@ export default async function DashboardPage() {
           ) : (
 
             <>
+
+              {dataError && (
+                <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  Bazı veriler yüklenemedi: {dataError}
+                </div>
+              )}
 
               {user.isOnFreeTrial && user.freeTrialEnd && (
 
