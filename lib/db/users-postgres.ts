@@ -2,8 +2,10 @@ import type {
   CreateEmailUserInput,
   CreateOAuthUserInput,
   PublicUser,
+  UpdateProfilePayload,
   UpdateUserPayload,
   User,
+  UserPreferences,
 } from "@/types/user";
 import bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
@@ -23,9 +25,21 @@ type UserRow = {
   free_trial_end: string | null;
   auth_provider: User["authProvider"];
   auth_provider_id: string | null;
+  preferences: UserPreferences | Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
 };
+
+function parsePreferences(raw: UserRow["preferences"]): UserPreferences {
+  if (!raw || typeof raw !== "object") return {};
+  const value = raw as UserPreferences;
+  return {
+    menuOrder: Array.isArray(value.menuOrder) ? value.menuOrder : undefined,
+    hiddenMenuItems: Array.isArray(value.hiddenMenuItems)
+      ? value.hiddenMenuItems
+      : undefined,
+  };
+}
 
 function mapUser(row: UserRow): User {
   return {
@@ -41,6 +55,7 @@ function mapUser(row: UserRow): User {
     freeTrialEnd: row.free_trial_end,
     authProvider: row.auth_provider,
     authProviderId: row.auth_provider_id,
+    preferences: parsePreferences(row.preferences),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -58,6 +73,7 @@ export function toPublicUser(user: User): PublicUser {
     freeTrialStart: user.freeTrialStart,
     freeTrialEnd: user.freeTrialEnd,
     authProvider: user.authProvider,
+    preferences: user.preferences ?? {},
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
     isOnFreeTrial: isOnFreeTrial(user),
@@ -223,6 +239,79 @@ export async function pgUpdateUser(
       free_trial_start = ${payload.freeTrialStart !== undefined ? payload.freeTrialStart : current.freeTrialStart},
       free_trial_end = ${payload.freeTrialEnd !== undefined ? payload.freeTrialEnd : current.freeTrialEnd},
       role = ${payload.role ?? current.role},
+      updated_at = NOW()
+    WHERE id = ${id}
+  `;
+
+  const updated = await pgFindUserById(id);
+  return updated ? toPublicUser(updated) : null;
+}
+
+export async function pgUpdateUserProfile(
+  id: string,
+  payload: UpdateProfilePayload
+): Promise<PublicUser | null> {
+  await ensureSchema();
+  const current = await pgFindUserById(id);
+  if (!current) return null;
+
+  const name = payload.name?.trim() ?? current.name;
+  const company = payload.company?.trim() ?? current.company;
+
+  if (name.length < 2) {
+    throw new Error("Ad en az 2 karakter olmalıdır.");
+  }
+
+  let passwordHash = current.passwordHash;
+
+  if (payload.newPassword) {
+    if (current.authProvider !== "email") {
+      throw new Error("OAuth hesaplarında şifre değiştirilemez.");
+    }
+    if (!payload.currentPassword) {
+      throw new Error("Mevcut şifrenizi girmelisiniz.");
+    }
+    const valid = await pgVerifyPassword(current, payload.currentPassword);
+    if (!valid) {
+      throw new Error("Mevcut şifre hatalı.");
+    }
+    if (payload.newPassword.length < 8) {
+      throw new Error("Yeni şifre en az 8 karakter olmalıdır.");
+    }
+    passwordHash = await bcrypt.hash(payload.newPassword, 10);
+  }
+
+  const sql = getSql();
+  await sql`
+    UPDATE users SET
+      name = ${name},
+      company = ${company},
+      password_hash = ${passwordHash},
+      updated_at = NOW()
+    WHERE id = ${id}
+  `;
+
+  const updated = await pgFindUserById(id);
+  return updated ? toPublicUser(updated) : null;
+}
+
+export async function pgUpdateUserPreferences(
+  id: string,
+  preferences: UserPreferences
+): Promise<PublicUser | null> {
+  await ensureSchema();
+  const current = await pgFindUserById(id);
+  if (!current) return null;
+
+  const merged: UserPreferences = {
+    ...current.preferences,
+    ...preferences,
+  };
+
+  const sql = getSql();
+  await sql`
+    UPDATE users SET
+      preferences = ${JSON.stringify(merged)}::jsonb,
       updated_at = NOW()
     WHERE id = ${id}
   `;

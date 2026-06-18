@@ -55,7 +55,6 @@ function normalizeDatabaseUrl(raw: string | undefined): string | null {
 
 /** Vercel Postgres / Neon — Prisma kullanılmıyor, ham SQL. */
 export function getDatabaseUrl(): string | null {
-  // Vercel Storage entegrasyonunda POSTGRES_URL genelde doğru olanıdır.
   const candidates =
     process.env.VERCEL === "1"
       ? [
@@ -69,12 +68,20 @@ export function getDatabaseUrl(): string | null {
           process.env.POSTGRES_URL_NON_POOLING,
         ];
 
-  for (const candidate of candidates) {
-    const normalized = normalizeDatabaseUrl(candidate);
-    if (normalized) return normalized;
-  }
+  const normalized = candidates
+    .map(normalizeDatabaseUrl)
+    .filter((url): url is string => url !== null);
 
-  return null;
+  if (normalized.length === 0) return null;
+
+  // Neon (Vercel Storage) tercih edilir; bozuk prisma.io URL'lerine düşmeyin.
+  const neon = normalized.find((url) => /neon\.tech/i.test(url));
+  if (neon) return neon;
+
+  const nonPrisma = normalized.find((url) => !/db\.prisma\.io/i.test(url));
+  if (nonPrisma) return nonPrisma;
+
+  return normalized[0];
 }
 
 export function isPostgresEnabled(): boolean {

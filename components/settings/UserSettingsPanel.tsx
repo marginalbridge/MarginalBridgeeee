@@ -5,6 +5,7 @@ import {
   DEFAULT_MENU_ORDER,
   resolveDashboardMenu,
 } from "@/lib/menu-config";
+import { APP_BUILD_ID } from "@/lib/build-info";
 import type { PublicUser, UserPreferences } from "@/types/user";
 import {
   ArrowDown,
@@ -433,6 +434,9 @@ export function UserSettingsPanel({
           </div>
         </div>
       )}
+      <p className="text-center text-xs text-gray-400">
+        Build: {APP_BUILD_ID}
+      </p>
     </div>
   );
 }

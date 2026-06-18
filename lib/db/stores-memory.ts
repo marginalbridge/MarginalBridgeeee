@@ -128,15 +128,7 @@ export async function memSyncStore(id: string, userId: string): Promise<PublicSt
   if (index === -1) return null;
 
   stores[index].status = "syncing";
-  await new Promise((resolve) => setTimeout(resolve, 900));
-
-  const syncedStore = stores[index];
-  syncedStore.status = "connected";
-  syncedStore.lastSyncAt = new Date().toISOString();
-  syncedStore.productCount = Math.floor(Math.random() * 400) + 50;
-  syncedStore.orderCount = Math.floor(Math.random() * 80) + 5;
-  syncedStore.updatedAt = new Date().toISOString();
-  stores[index] = syncedStore;
-
-  return toPublicStore(syncedStore);
+  const { syncMarketplaceStore } = await import("@/lib/marketplace-sync");
+  const result = await syncMarketplaceStore(userId, id);
+  return result.store;
 }

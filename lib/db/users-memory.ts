@@ -3,8 +3,10 @@ import type {
   CreateEmailUserInput,
   CreateOAuthUserInput,
   PublicUser,
+  UpdateProfilePayload,
   UpdateUserPayload,
   User,
+  UserPreferences,
 } from "@/types/user";
 import bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
@@ -41,6 +43,7 @@ async function ensureMemoryUsers(): Promise<User[]> {
         freeTrialEnd: null,
         authProvider: "email",
         authProviderId: null,
+        preferences: {},
         createdAt: now,
         updatedAt: now,
       });
@@ -48,6 +51,13 @@ async function ensureMemoryUsers(): Promise<User[]> {
   }
 
   return globalUsers.__marginalBridgeUsers;
+}
+
+function ensureUserPreferences(user: User): User {
+  if (!user.preferences) {
+    user.preferences = {};
+  }
+  return user;
 }
 
 export function memoryToPublicUser(user: User): PublicUser {
@@ -62,6 +72,7 @@ export function memoryToPublicUser(user: User): PublicUser {
     freeTrialStart: user.freeTrialStart,
     freeTrialEnd: user.freeTrialEnd,
     authProvider: user.authProvider,
+    preferences: user.preferences ?? {},
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
     isOnFreeTrial: isOnFreeTrial(user),
@@ -76,7 +87,8 @@ export async function memFindUserByEmail(email: string): Promise<User | null> {
 
 export async function memFindUserById(id: string): Promise<User | null> {
   const users = await ensureMemoryUsers();
-  return users.find((user) => user.id === id) ?? null;
+  const user = users.find((entry) => entry.id === id) ?? null;
+  return user ? ensureUserPreferences(user) : null;
 }
 
 export async function memFindUserByOAuth(
@@ -119,6 +131,7 @@ export async function memCreateEmailUser(input: CreateEmailUserInput): Promise<P
     freeTrialEnd: trial.freeTrialEnd,
     authProvider: "email",
     authProviderId: null,
+    preferences: {},
     createdAt: now,
     updatedAt: now,
   };
@@ -158,6 +171,7 @@ export async function memFindOrCreateOAuthUser(
     freeTrialEnd: trial.freeTrialEnd,
     authProvider: input.authProvider,
     authProviderId: input.authProviderId,
+    preferences: {},
     createdAt: now,
     updatedAt: now,
   };
@@ -187,6 +201,64 @@ export async function memUpdateUser(
   if (payload.freeTrialStart !== undefined) user.freeTrialStart = payload.freeTrialStart;
   if (payload.freeTrialEnd !== undefined) user.freeTrialEnd = payload.freeTrialEnd;
   if (payload.role !== undefined) user.role = payload.role;
+  user.updatedAt = new Date().toISOString();
+  users[index] = user;
+  return memoryToPublicUser(user);
+}
+
+export async function memUpdateUserProfile(
+  id: string,
+  payload: UpdateProfilePayload
+): Promise<PublicUser | null> {
+  const users = await ensureMemoryUsers();
+  const index = users.findIndex((user) => user.id === id);
+  if (index === -1) return null;
+
+  const user = users[index];
+  const name = payload.name?.trim() ?? user.name;
+  const company = payload.company?.trim() ?? user.company;
+
+  if (name.length < 2) {
+    throw new Error("Ad en az 2 karakter olmalıdır.");
+  }
+
+  if (payload.newPassword) {
+    if (user.authProvider !== "email") {
+      throw new Error("OAuth hesaplarında şifre değiştirilemez.");
+    }
+    if (!payload.currentPassword) {
+      throw new Error("Mevcut şifrenizi girmelisiniz.");
+    }
+    const valid = await memVerifyPassword(user, payload.currentPassword);
+    if (!valid) {
+      throw new Error("Mevcut şifre hatalı.");
+    }
+    if (payload.newPassword.length < 8) {
+      throw new Error("Yeni şifre en az 8 karakter olmalıdır.");
+    }
+    user.passwordHash = await bcrypt.hash(payload.newPassword, 10);
+  }
+
+  user.name = name;
+  user.company = company;
+  user.updatedAt = new Date().toISOString();
+  users[index] = user;
+  return memoryToPublicUser(user);
+}
+
+export async function memUpdateUserPreferences(
+  id: string,
+  preferences: UserPreferences
+): Promise<PublicUser | null> {
+  const users = await ensureMemoryUsers();
+  const index = users.findIndex((user) => user.id === id);
+  if (index === -1) return null;
+
+  const user = users[index];
+  user.preferences = {
+    ...user.preferences,
+    ...preferences,
+  };
   user.updatedAt = new Date().toISOString();
   users[index] = user;
   return memoryToPublicUser(user);

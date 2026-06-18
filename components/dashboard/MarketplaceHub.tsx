@@ -13,6 +13,7 @@ import {
   Unplug,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface ConnectFormState {
   storeName: string;
@@ -34,6 +35,7 @@ function formatSyncDate(value: string | null): string {
 }
 
 export function MarketplaceHub() {
+  const router = useRouter();
   const [stores, setStores] = useState<PublicStore[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -125,6 +127,7 @@ export function MarketplaceHub() {
         setMessage(result.message ?? "Trendyol mağazası bağlandı.");
         closeConnectForm();
         await loadStores();
+        router.refresh();
       } else {
         setError(result.message ?? "Trendyol bağlantısı başarısız.");
       }
@@ -169,6 +172,7 @@ export function MarketplaceHub() {
       setMessage(data.message ?? "Mağaza bağlandı.");
       closeConnectForm();
       await loadStores();
+      router.refresh();
     } catch {
       setError("Bağlantı hatası. Tekrar deneyin.");
     } finally {
@@ -192,6 +196,7 @@ export function MarketplaceHub() {
 
       setMessage(data.message ?? "Senkronizasyon tamamlandı.");
       await loadStores();
+      router.refresh();
     } catch {
       setError("Bağlantı hatası. Tekrar deneyin.");
     } finally {

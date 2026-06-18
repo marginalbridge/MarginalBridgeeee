@@ -5,6 +5,7 @@ import type { Order, OrderStatus } from "@/types";
 
 interface OrdersTableProps {
   orders: Order[];
+  emptyMessage?: string;
 }
 
 function StatusBadge({ status }: { status: OrderStatus }) {
@@ -25,7 +26,7 @@ function MarketplaceCell({ marketplace }: { marketplace: Order["marketplace"] })
   return <MarketplaceBadge marketplace={marketplace} />;
 }
 
-export function OrdersTable({ orders }: OrdersTableProps) {
+export function OrdersTable({ orders, emptyMessage }: OrdersTableProps) {
   return (
     <div className="glass-card overflow-hidden">
       <div className="border-b border-surface-border px-6 py-4">
@@ -36,6 +37,12 @@ export function OrdersTable({ orders }: OrdersTableProps) {
       </div>
 
       <div className="overflow-x-auto">
+        {orders.length === 0 ? (
+          <div className="px-6 py-12 text-center text-sm text-gray-600">
+            {emptyMessage ??
+              "Henüz sipariş yok. Mağaza bağlayıp senkronize edin."}
+          </div>
+        ) : (
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b border-surface-border bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
@@ -108,6 +115,7 @@ export function OrdersTable({ orders }: OrdersTableProps) {
             })}
           </tbody>
         </table>
+        )}
       </div>
     </div>
   );

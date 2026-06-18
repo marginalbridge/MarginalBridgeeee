@@ -1,43 +1,14 @@
-# dependencies
-/node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
+import { dirname } from "path";
+import { fileURLToPath } from "url";
+import { FlatCompat } from "@eslint/eslintrc";
 
-# testing
-/coverage
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
-# next.js
-/.next/
-/out/
+const compat = new FlatCompat({
+  baseDirectory: __dirname,
+});
 
-# production
-/build
+const eslintConfig = [...compat.extends("next/core-web-vitals", "next/typescript")];
 
-# misc
-.DS_Store
-*.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# env files
-.env
-.env*.local
-
-# typescript
-*.tsbuildinfo
-
-# vercel
-.vercel
-
-# user database
-/data/users.json
-/data/gtip-cache.json
+export default eslintConfig;

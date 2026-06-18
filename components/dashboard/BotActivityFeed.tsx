@@ -4,6 +4,7 @@ import { FileSearch, Search, Swords } from "lucide-react";
 
 interface BotActivityFeedProps {
   logs: BotLog[];
+  emptyMessage?: string;
 }
 
 const logTypeConfig: Record<
@@ -30,7 +31,7 @@ const logTypeConfig: Record<
   },
 };
 
-export function BotActivityFeed({ logs }: BotActivityFeedProps) {
+export function BotActivityFeed({ logs, emptyMessage }: BotActivityFeedProps) {
   return (
     <div className="glass-card">
       <div className="border-b border-surface-border px-6 py-4">
@@ -41,7 +42,12 @@ export function BotActivityFeed({ logs }: BotActivityFeedProps) {
       </div>
 
       <div className="max-h-[420px] divide-y divide-gray-200 overflow-y-auto">
-        {logs.map((log) => {
+        {logs.length === 0 ? (
+          <div className="px-6 py-12 text-center text-sm text-gray-600">
+            {emptyMessage ?? "Henüz bot aktivitesi yok."}
+          </div>
+        ) : (
+        logs.map((log) => {
           const config = logTypeConfig[log.type];
           const Icon = config.icon;
 
@@ -69,7 +75,8 @@ export function BotActivityFeed({ logs }: BotActivityFeedProps) {
               </div>
             </div>
           );
-        })}
+        })
+        )}
       </div>
     </div>
   );

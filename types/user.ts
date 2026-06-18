@@ -4,6 +4,11 @@ export type UserRole = "admin" | "user";
 
 export type UserStatus = "pending" | "active" | "suspended";
 
+export interface UserPreferences {
+  menuOrder?: string[];
+  hiddenMenuItems?: string[];
+}
+
 export interface User {
   id: string;
   email: string;
@@ -17,6 +22,7 @@ export interface User {
   freeTrialEnd: string | null;
   authProvider: AuthProvider;
   authProviderId: string | null;
+  preferences: UserPreferences;
   createdAt: string;
   updatedAt: string;
 }
@@ -32,10 +38,18 @@ export interface PublicUser {
   freeTrialStart: string | null;
   freeTrialEnd: string | null;
   authProvider: AuthProvider;
+  preferences: UserPreferences;
   createdAt: string;
   updatedAt: string;
   isOnFreeTrial: boolean;
   hasActiveAccess: boolean;
+}
+
+export interface UpdateProfilePayload {
+  name?: string;
+  company?: string;
+  currentPassword?: string;
+  newPassword?: string;
 }
 
 export interface UpdateUserPayload {

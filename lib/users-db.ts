@@ -8,14 +8,18 @@ import {
   memListUsers,
   memoryToPublicUser,
   memUpdateUser,
+  memUpdateUserPreferences,
+  memUpdateUserProfile,
   memVerifyPassword,
 } from "@/lib/db/users-memory";
 import type {
   CreateEmailUserInput,
   CreateOAuthUserInput,
   PublicUser,
+  UpdateProfilePayload,
   UpdateUserPayload,
   User,
+  UserPreferences,
 } from "@/types/user";
 
 export async function findUserByEmail(email: string): Promise<User | null> {
@@ -95,6 +99,30 @@ export async function updateUser(
     () => import("@/lib/db/users-postgres"),
     () => memUpdateUser(id, payload),
     (pg) => pg.pgUpdateUser(id, payload)
+  );
+}
+
+export async function updateUserProfile(
+  id: string,
+  payload: UpdateProfilePayload
+): Promise<PublicUser | null> {
+  return withPostgresModule(
+    "users",
+    () => import("@/lib/db/users-postgres"),
+    () => memUpdateUserProfile(id, payload),
+    (pg) => pg.pgUpdateUserProfile(id, payload)
+  );
+}
+
+export async function updateUserPreferences(
+  id: string,
+  preferences: UserPreferences
+): Promise<PublicUser | null> {
+  return withPostgresModule(
+    "users",
+    () => import("@/lib/db/users-postgres"),
+    () => memUpdateUserPreferences(id, preferences),
+    (pg) => pg.pgUpdateUserPreferences(id, preferences)
   );
 }
 

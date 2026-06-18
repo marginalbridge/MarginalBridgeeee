@@ -6,17 +6,25 @@ import {
   isAppleOAuthConfigured,
   isGoogleOAuthConfigured,
 } from "@/lib/oauth/config";
+import { isSessionSecretConfigured } from "@/lib/session";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   const googleConfigured = isGoogleOAuthConfigured();
   const appleConfigured = isAppleOAuthConfigured();
   const googleStatus = getGoogleOAuthStatus();
+  const sessionOk = isSessionSecretConfigured();
   const siteOrigin = getRequestOrigin(request);
   const redirectUriForThisSite = getGoogleOAuthRedirectUri(siteOrigin);
   const redirectUriFromEnv = getGoogleOAuthRedirectUri();
 
   return NextResponse.json({
+    session: {
+      configured: sessionOk,
+      hint: sessionOk
+        ? "OK"
+        : "SESSION_SECRET boş veya 16 karakterden kısa. Vercel env düzenleyip redeploy edin.",
+    },
     google: {
       configured: googleConfigured,
       hasClientId: googleStatus.hasClientId,
