@@ -145,23 +145,24 @@ export const MARKETPLACE_CONFIGS: MarketplaceConfig[] = [
   {
     platform: "WebSitesi",
     description:
-      "Kendi e-ticaret sitenizi (Shopify, WooCommerce, özel altyapı) API ile bağlayın.",
-    sellerIdLabel: "Web Site URL",
+      "Shopify mağazanızı Admin API ile bağlayın. Ürünler otomatik senkronize edilir.",
+    sellerIdLabel: "Shopify Mağaza URL",
     fields: [
       {
         key: "sellerId",
-        label: "Web Site URL",
-        placeholder: "https://www.ornekshop.com",
+        label: "Shopify Mağaza URL",
+        placeholder: "https://magaza-adiniz.myshopify.com",
       },
       {
         key: "apiKey",
-        label: "API Key / Access Token",
-        placeholder: "Site API anahtarınız",
+        label: "Admin API Access Token",
+        placeholder: "shpat_xxxxxxxx",
+        type: "password",
       },
       {
         key: "apiSecret",
-        label: "API Secret (opsiyonel)",
-        placeholder: "Gerekirse gizli anahtar",
+        label: "Webhook Secret (opsiyonel)",
+        placeholder: "Gerekirse webhook secret",
         type: "password",
       },
     ],

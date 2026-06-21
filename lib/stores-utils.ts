@@ -1,4 +1,5 @@
 import { getMarketplaceConfig, isValidWebsiteUrl, maskSecret } from "@/lib/marketplaces";
+import { isShopifyStore, testShopifyConnection } from "@/lib/shopify-client";
 import type {
   ConnectedStore,
   ConnectStorePayload,
@@ -34,7 +35,11 @@ export function validateConnectPayload(
   if (!payload.sellerId.trim()) return "Satıcı / mağaza kimliği gereklidir.";
 
   if (payload.platform === "WebSitesi" && !isValidWebsiteUrl(payload.sellerId)) {
-    return "Geçerli bir web site URL'si girin (https://...).";
+    return "Geçerli bir Shopify mağaza URL'si girin (https://magaza-adiniz.myshopify.com).";
+  }
+
+  if (payload.platform === "WebSitesi" && !isShopifyStore(payload.sellerId)) {
+    return "Shopify bağlantısı için .myshopify.com adresini kullanın (ör. https://magaza-adiniz.myshopify.com).";
   }
 
   if (!options?.allowEmptySecrets) {
@@ -48,11 +53,16 @@ export function validateConnectPayload(
 }
 
 export async function simulateConnectionTest(payload: ConnectStorePayload): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, 600));
-
   if (payload.apiKey.toLowerCase().includes("invalid")) {
     throw new Error("API kimlik bilgileri doğrulanamadı. Anahtarları kontrol edin.");
   }
+
+  if (payload.platform === "WebSitesi" && isShopifyStore(payload.sellerId)) {
+    await testShopifyConnection(payload.sellerId, payload.apiKey);
+    return;
+  }
+
+  await new Promise((resolve) => setTimeout(resolve, 400));
 }
 
 export function isValidPlatform(value: unknown): value is MarketplacePlatform {

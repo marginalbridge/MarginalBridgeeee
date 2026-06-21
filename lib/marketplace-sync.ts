@@ -4,6 +4,11 @@ import {
   saveTrendyolProductsToDb,
   upsertCatalogFromSync,
 } from "@/lib/orders-db";
+import {
+  fetchShopifyProducts,
+  isShopifyStore,
+  testShopifyConnection,
+} from "@/lib/shopify-client";
 import { findStoreById } from "@/lib/stores-db";
 import { toPublicStore } from "@/lib/stores-utils";
 import {
@@ -70,6 +75,7 @@ export async function syncMarketplaceStore(
 
   let products: TrendyolProduct[] = [];
   let orders: Awaited<ReturnType<typeof fetchTrendyolOrders>>["orders"] = [];
+  let shopifyProducts: Awaited<ReturnType<typeof fetchShopifyProducts>> = [];
 
   if (store.platform === "Trendyol") {
     const [productResult, orderResult] = await Promise.all([
@@ -90,37 +96,52 @@ export async function syncMarketplaceStore(
     products = productResult.products;
     orders = orderResult.orders;
     await saveTrendyolProductsToDb(userId, products);
+  } else if (store.platform === "WebSitesi" && isShopifyStore(store.sellerId)) {
+    await testShopifyConnection(store.sellerId, store.apiKey);
+    shopifyProducts = await fetchShopifyProducts(store.sellerId, store.apiKey);
   }
 
-  const logs = buildSyncLogs(store.platform, products.length, orders.length);
+  const catalogItems =
+    store.platform === "Trendyol"
+      ? products.map((product) => ({
+          sku: product.sku,
+          name: product.title,
+          priceTl: product.salePrice,
+          stock: product.quantity,
+          category: mapTurkishCategory(product.category),
+          storeId: store.id,
+          platform: store.platform,
+        }))
+      : shopifyProducts.map((product) => ({
+          sku: product.sku,
+          name: product.title,
+          priceTl: product.price,
+          stock: product.quantity,
+          category: mapTurkishCategory(product.category),
+          storeId: store.id,
+          platform: store.platform,
+        }));
+
+  const productCount = catalogItems.length;
+
+  const logs = buildSyncLogs(store.platform, productCount, orders.length);
 
   await replaceStoreLiveData(userId, store.id, orders, logs);
 
-  if (products.length > 0) {
-    await upsertCatalogFromSync(
-      userId,
-      products.map((product) => ({
-        sku: product.sku,
-        name: product.title,
-        priceTl: product.salePrice,
-        stock: product.quantity,
-        category: mapTurkishCategory(product.category),
-        storeId: store.id,
-        platform: store.platform,
-      }))
-    );
+  if (catalogItems.length > 0) {
+    await upsertCatalogFromSync(userId, catalogItems);
   }
 
   const lastSyncAt = new Date().toISOString();
   const updatedStore = await updateStoreMetrics(store, {
-    productCount: products.length,
+    productCount,
     orderCount: orders.length,
     lastSyncAt,
   });
 
   return {
     store: updatedStore,
-    productCount: products.length,
+    productCount,
     orderCount: orders.length,
   };
 }

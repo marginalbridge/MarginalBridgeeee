@@ -4,8 +4,8 @@ import {
   memFindCatalogProduct,
   memListCatalogProducts,
   memUpdateCatalogProduct,
-  publishToStores,
 } from "@/lib/db/catalog-memory";
+import { publishProductToStores } from "@/lib/channel-publish";
 import { withPostgresModule } from "@/lib/db/storage";
 import type {
   CatalogProduct,
@@ -65,7 +65,12 @@ export async function createCatalogProduct(
 
   await ensureUniqueSku(userId, payload.sku);
 
-  const channels = await publishToStores(userId, payload.storeIds);
+  const channels = await publishProductToStores(userId, payload.storeIds, {
+    name: payload.name,
+    sku: payload.sku,
+    priceTl: payload.priceTl,
+    stock: payload.stock,
+  });
 
   return withPostgresModule(
     "catalog",
@@ -97,7 +102,12 @@ export async function updateCatalogProduct(
   }
 
   const storeIds = payload.storeIds ?? current.channels.map((channel) => channel.storeId);
-  const channels = await publishToStores(userId, storeIds);
+  const channels = await publishProductToStores(userId, storeIds, {
+    name: payload.name ?? current.name,
+    sku: payload.sku ?? current.sku,
+    priceTl: payload.priceTl ?? current.priceTl,
+    stock: payload.stock ?? current.stock,
+  });
 
   return withPostgresModule(
     "catalog",
@@ -119,7 +129,7 @@ export async function deleteCatalogProduct(id: string, userId: string): Promise<
 
   const storeIds = current.channels.map((channel) => channel.storeId);
   if (storeIds.length > 0) {
-    await publishToStores(userId, storeIds);
+    await publishProductToStores(userId, storeIds);
   }
 
   return withPostgresModule(

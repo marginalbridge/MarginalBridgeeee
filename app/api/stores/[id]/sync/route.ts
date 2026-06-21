@@ -26,6 +26,9 @@ export async function POST(_request: Request, { params }: RouteParams) {
 
   return NextResponse.json({
     store,
-    message: `${store.platform} mağazası senkronize edildi.`,
+    message:
+      store.productCount > 0
+        ? `${store.platform} senkronize edildi — ${store.productCount} ürün güncellendi.`
+        : `${store.platform} senkronize edildi.`,
   });
 }

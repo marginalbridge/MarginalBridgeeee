@@ -50,9 +50,13 @@ export async function POST(request: NextRequest) {
     if (body.platform !== "Trendyol") {
       const { syncMarketplaceStore } = await import("@/lib/marketplace-sync");
       const syncResult = await syncMarketplaceStore(user.id, store.id);
+      const productMsg =
+        syncResult.productCount > 0
+          ? `${syncResult.productCount} ürün kataloğa aktarıldı.`
+          : "Mağaza bağlandı. Ürün bulunamadıysa Shopify token izinlerini kontrol edin.";
       return NextResponse.json({
         store: syncResult.store,
-        message: `${body.platform} mağazası bağlandı. Siparişler pazaryerinden düştüğünde Yenile ile görünür.`,
+        message: `${body.platform} mağazası bağlandı. ${productMsg}`,
       });
     }
 
