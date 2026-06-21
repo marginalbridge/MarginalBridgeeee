@@ -1,10 +1,7 @@
 import type { MetadataRoute } from "next";
 
-const BASE_URL = (
-  process.env.NEXT_PUBLIC_SITE_URL ??
-  process.env.NEXT_PUBLIC_APP_URL ??
-  "https://www.marginalbridge.com"
-).replace(/\/$/, "");
+/** Kanonik site adresi — Vercel geçici domaini asla kullanılmaz */
+const BASE_URL = "https://www.marginalbridge.com";
 
 type SitemapEntry = MetadataRoute.Sitemap[number];
 
