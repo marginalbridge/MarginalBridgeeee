@@ -13,7 +13,7 @@ if (-not (Test-Path $src)) {
 New-Item -ItemType Directory -Force -Path $dst | Out-Null
 
 # /IS /IT: timestamp fark etmeksizin tum dosyalari zorla kopyala
-robocopy $src $dst /MIR /IS /IT /XD node_modules .next .git /XF .env .env.local /NFL /NDL /NJH /NJS
+robocopy $src $dst /MIR /IS /IT /XD node_modules .next .git /XF .env .env.local *.zip /NFL /NDL /NJH /NJS
 
 $code = $LASTEXITCODE
 if ($code -ge 8) {
