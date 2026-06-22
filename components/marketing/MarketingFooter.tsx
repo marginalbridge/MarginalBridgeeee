@@ -1,4 +1,5 @@
 import { Logo } from "@/components/Logo";
+import { LEGAL_LINKS } from "@/lib/legal-content";
 import Link from "next/link";
 
 export function MarketingFooter() {
@@ -65,10 +66,12 @@ export function MarketingFooter() {
 
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-gray-800 pt-8 text-xs text-gray-500 sm:flex-row">
           <p>© {new Date().getFullYear()} MarginalBridge. Tüm hakları saklıdır.</p>
-          <div className="flex gap-6">
-            <span>Gizlilik Politikası</span>
-            <span>Kullanım Koşulları</span>
-            <span>KVKK</span>
+          <div className="flex flex-wrap justify-center gap-4 sm:gap-6">
+            {LEGAL_LINKS.map((link) => (
+              <Link key={link.href} href={link.href} className="hover:text-white">
+                {link.label}
+              </Link>
+            ))}
           </div>
         </div>
       </div>

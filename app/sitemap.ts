@@ -28,6 +28,21 @@ const PUBLIC_ROUTES: PublicRoute[] = [
     changeFrequency: "monthly",
     priority: 0.8,
   },
+  {
+    path: "/gizlilik-politikasi",
+    changeFrequency: "yearly",
+    priority: 0.4,
+  },
+  {
+    path: "/kullanim-kosullari",
+    changeFrequency: "yearly",
+    priority: 0.4,
+  },
+  {
+    path: "/kvkk",
+    changeFrequency: "yearly",
+    priority: 0.4,
+  },
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {

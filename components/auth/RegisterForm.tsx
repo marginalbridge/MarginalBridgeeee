@@ -161,6 +161,18 @@ export function RegisterForm({ planId }: RegisterFormProps) {
         )}
       </button>
 
+      <p className="text-center text-xs text-gray-500">
+        Kayıt olarak{" "}
+        <Link href="/kullanim-kosullari" className="text-bridge-600 hover:text-bridge-700">
+          Kullanım Koşulları
+        </Link>
+        &apos;nı ve{" "}
+        <Link href="/gizlilik-politikasi" className="text-bridge-600 hover:text-bridge-700">
+          Gizlilik Politikası
+        </Link>
+        &apos;nı kabul etmiş olursunuz.
+      </p>
+
       <p className="text-center text-sm text-gray-600">
         Zaten hesabınız var mı?{" "}
         <Link href="/login" className="text-bridge-600 hover:text-bridge-700">

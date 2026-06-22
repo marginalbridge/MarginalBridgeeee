@@ -1,5 +1,6 @@
-import { ArrowRight, CheckCircle2, Globe2, Shield, TrendingUp, Users, Zap } from "lucide-react";
+import { ArrowRight, Globe2, TrendingUp, Users, Zap } from "lucide-react";
 import Link from "next/link";
+import { PanelPromoReel } from "@/components/auth/PanelPromoReel";
 
 export function HeroSection() {
   return (
@@ -41,19 +42,8 @@ export function HeroSection() {
             </a>
           </div>
 
-          <div className="mt-12 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-gray-500">
-            <span className="inline-flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-              Kredi kartı gerekmez
-            </span>
-            <span className="inline-flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-              Kurulum 5 dakika
-            </span>
-            <span className="inline-flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-              İptal garantisi
-            </span>
+          <div className="mt-12">
+            <PanelPromoReel variant="hero" />
           </div>
         </div>
 
