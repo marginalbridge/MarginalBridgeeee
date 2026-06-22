@@ -1,4 +1,4 @@
-import { ArrowRight, Globe2, TrendingUp, Users, Zap } from "lucide-react";
+import { ArrowRight, CheckCircle2, Globe2, Shield, TrendingUp, Users, Zap } from "lucide-react";
 import Link from "next/link";
 import { PanelPromoReel } from "@/components/auth/PanelPromoReel";
 
