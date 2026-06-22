@@ -82,5 +82,19 @@ Write-Host "Zip      : $zip ($zipMb MB)"
 Write-Host "Dosya    : $fileCount adet"
 Write-Host "Build    : $buildId"
 Write-Host ""
-Write-Host "GitHub Desktop -> Add Local Repository -> $dst -> Commit -> Push"
+
+$gitDir = Join-Path $dst ".git"
+if (-not (Test-Path $gitDir)) {
+  Write-Host "UYARI: Bu klasorde .git YOK - GitHub Desktop commit yapamaz." -ForegroundColor Yellow
+  Write-Host "Ilk kurulum (bir kez):"
+  Write-Host "  1) GitHub Desktop -> File -> Clone repository (veya Add local repository -> create)"
+  Write-Host "  2) Hedef klasor: $dst"
+  Write-Host "  3) Sonra tekrar bu scripti calistirabilirsiniz (.git korunur)"
+  Write-Host ""
+} else {
+  Write-Host "Git      : .git mevcut (commit icin hazir)"
+  Write-Host ""
+}
+
+Write-Host "GitHub Desktop -> $dst -> Commit -> Push"
 Write-Host "Deploy kontrol: https://marginal-bridgeeee.vercel.app/api/health/build"
