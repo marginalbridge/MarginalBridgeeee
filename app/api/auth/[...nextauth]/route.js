@@ -11,6 +11,7 @@ export const authOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   pages: {
     signIn: "/login",
+    error: "/login",
   },
   callbacks: {
     async signIn({ user, account }) {
@@ -48,6 +49,19 @@ export const authOptions = {
   },
 };
 
-const handler = NextAuth(authOptions);
+const nextAuthHandler = NextAuth(authOptions);
 
-export { handler as GET, handler as POST };
+async function bindNextAuthUrl(request) {
+  const { getRequestOrigin } = await import("@/lib/oauth/config");
+  process.env.NEXTAUTH_URL = getRequestOrigin(request);
+}
+
+export async function GET(request, context) {
+  await bindNextAuthUrl(request);
+  return nextAuthHandler(request, context);
+}
+
+export async function POST(request, context) {
+  await bindNextAuthUrl(request);
+  return nextAuthHandler(request, context);
+}

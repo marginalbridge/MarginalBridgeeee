@@ -1,14 +1,30 @@
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { LoginForm } from "@/components/auth/LoginForm";
 import LoginButton from "@/components/LoginButton";
+import { getNextAuthGoogleCallbackUrl } from "@/lib/oauth/config";
+import { headers } from "next/headers";
+
+function resolveSiteOrigin(headerList: Headers): string | undefined {
+  const host = headerList.get("x-forwarded-host") ?? headerList.get("host");
+  if (!host) return undefined;
+  const proto = headerList.get("x-forwarded-proto") ?? "http";
+  return `${proto}://${host.split(",")[0]?.trim()}`.replace(/\/$/, "");
+}
 
 export default async function LoginPage({
   searchParams,
 }: {
   searchParams: Promise<{ redirect?: string; error?: string; redirect_uri?: string }>;
 }) {
-  const { redirect, error, redirect_uri: redirectUriHint } = await searchParams;
+  const { redirect, error, redirect_uri: redirectUriFromQuery } = await searchParams;
   const destination = redirect ?? "/dashboard";
+  const headerList = await headers();
+  const siteOrigin = resolveSiteOrigin(headerList);
+  const callbackHint =
+    redirectUriFromQuery ??
+    (siteOrigin
+      ? encodeURIComponent(getNextAuthGoogleCallbackUrl(siteOrigin))
+      : undefined);
 
   return (
     <AuthLayout
@@ -35,7 +51,7 @@ export default async function LoginPage({
         <LoginForm
           redirect={destination}
           initialError={error}
-          redirectUriHint={redirectUriHint}
+          redirectUriHint={callbackHint}
         />
       </div>
     </AuthLayout>

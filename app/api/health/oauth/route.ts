@@ -1,7 +1,8 @@
 import {
-  getAppUrl,
-  getGoogleOAuthRedirectUri,
+  getGoogleConsoleRedirectUris,
+  getGoogleJavascriptOrigin,
   getGoogleOAuthStatus,
+  getNextAuthGoogleCallbackUrl,
   getRequestOrigin,
   isAppleOAuthConfigured,
   isGoogleOAuthConfigured,
@@ -15,8 +16,9 @@ export async function GET(request: NextRequest) {
   const googleStatus = getGoogleOAuthStatus();
   const sessionOk = isSessionSecretConfigured();
   const siteOrigin = getRequestOrigin(request);
-  const redirectUriForThisSite = getGoogleOAuthRedirectUri(siteOrigin);
-  const redirectUriFromEnv = getGoogleOAuthRedirectUri();
+  const redirectUriForThisSite = getNextAuthGoogleCallbackUrl(siteOrigin);
+  const allRedirectUris = getGoogleConsoleRedirectUris();
+  const javascriptOriginForThisSite = getGoogleJavascriptOrigin(siteOrigin);
 
   return NextResponse.json({
     session: {
@@ -29,21 +31,22 @@ export async function GET(request: NextRequest) {
       configured: googleConfigured,
       hasClientId: googleStatus.hasClientId,
       hasClientSecret: googleStatus.hasClientSecret,
-      /** Tarayıcıdaki adresten — Google Console'a BUNU ekleyin */
+      provider: "nextauth",
+      /** Bu site adresinden giriş yapıyorsanız — Google Console'a BUNU ekleyin */
       redirectUriForThisSite,
-      /** Ortam değişkeninden tahmin */
-      redirectUriFromEnv,
+      javascriptOriginForThisSite,
+      /** Tüm ortamlar için önerilen callback listesi */
+      redirectUrisToRegister: allRedirectUris,
       siteOrigin,
-      appUrl: getAppUrl(),
-      javascriptOriginForThisSite: siteOrigin,
       steps: [
-        "Google Console → Kimlik Bilgileri → OAuth istemcinizi düzenleyin",
-        "Yetkilendirilmiş JavaScript kaynakları: javascriptOriginForThisSite (sadece kök, /callback yok)",
-        "Yetkilendirilmiş yönlendirme URI'leri: redirectUriForThisSite (tam yol, /callback ile biter)",
-        "Kaydet → 1-2 dk bekleyin → tekrar deneyin",
+        "Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client",
+        "Authorized JavaScript origins: site kökü (ör. https://www.marginalbridge.com) — /callback OLMADAN",
+        "Authorized redirect URIs: redirectUriForThisSite — tam yol, /api/auth/callback/google ile biter",
+        "Eski adres (/api/auth/oauth/google/callback) artık kullanılmıyor — kaldırabilirsiniz",
+        "Kaydet → 1-2 dk bekleyin → gizli sekmede tekrar deneyin",
       ],
       hint: googleConfigured
-        ? "redirectUriForThisSite değerini birebir kopyalayın — sadece site adresi (/) yetmez."
+        ? "redirect_uri_mismatch alıyorsanız redirectUriForThisSite değerini Google Console'a birebir ekleyin."
         : "GOOGLE_CLIENT_ID ve GOOGLE_CLIENT_SECRET ikisi de dolu olmalı, sonra redeploy.",
     },
     apple: {

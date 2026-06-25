@@ -21,6 +21,11 @@ export function getAppUrl(): string {
     return explicit.replace(/\/$/, "");
   }
 
+  const nextAuth = process.env.NEXTAUTH_URL?.trim();
+  if (nextAuth && !/localhost|127\.0\.0\.1/i.test(nextAuth)) {
+    return nextAuth.replace(/\/$/, "");
+  }
+
   const production = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
   if (production) {
     return `https://${production.replace(/^https?:\/\//, "").replace(/\/$/, "")}`;
@@ -34,12 +39,79 @@ export function getAppUrl(): string {
     return explicit.replace(/\/$/, "");
   }
 
+  if (nextAuth) {
+    return nextAuth.replace(/\/$/, "");
+  }
+
   return "http://localhost:3000";
 }
 
+/** NextAuth ve OAuth için gerçek istek kökü (Vercel / www uyumlu). */
+export function resolveAuthBaseUrl(origin?: string): string {
+  if (origin) {
+    return origin.replace(/\/$/, "");
+  }
+  return getAppUrl();
+}
+
+/** NextAuth Google callback — Google Console'a eklenecek adres. */
+export function getNextAuthGoogleCallbackUrl(origin?: string): string {
+  return `${resolveAuthBaseUrl(origin)}/api/auth/callback/google`;
+}
+
+/** Google Console → Authorized JavaScript origins */
+export function getGoogleJavascriptOrigin(origin?: string): string {
+  return resolveAuthBaseUrl(origin);
+}
+
+/**
+ * Google Console'a eklenmesi gereken tüm olası NextAuth callback adresleri.
+ * www / apex / Vercel / localhost varyantlarını kapsar.
+ */
+export function getGoogleConsoleRedirectUris(): string[] {
+  const bases = new Set<string>();
+
+  const candidates = [
+    process.env.NEXT_PUBLIC_APP_URL?.trim(),
+    process.env.NEXTAUTH_URL?.trim(),
+    process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim()
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL.trim().replace(/^https?:\/\//, "")}`
+      : "",
+    process.env.VERCEL_URL?.trim()
+      ? `https://${process.env.VERCEL_URL.trim().replace(/^https?:\/\//, "")}`
+      : "",
+    "http://localhost:3000",
+    "https://www.marginalbridge.com",
+    "https://marginalbridge.com",
+    "https://marginal-bridgeeee.vercel.app",
+  ].filter(Boolean);
+
+  for (const raw of candidates) {
+    const base = raw.replace(/\/$/, "");
+    bases.add(base);
+
+    try {
+      const url = new URL(base.startsWith("http") ? base : `https://${base}`);
+      const host = url.host;
+      bases.add(`${url.protocol}//${host}`);
+
+      if (host.startsWith("www.")) {
+        bases.add(`${url.protocol}//${host.slice(4)}`);
+      } else if (!host.includes("localhost") && host.includes(".")) {
+        bases.add(`${url.protocol}//www.${host}`);
+      }
+    } catch {
+      // skip invalid URL
+    }
+  }
+
+  return [...bases]
+    .map((base) => `${base.replace(/\/$/, "")}/api/auth/callback/google`)
+    .sort();
+}
+
 export function getGoogleOAuthRedirectUri(origin?: string): string {
-  const base = origin ?? getAppUrl();
-  return `${base}/api/auth/oauth/google/callback`;
+  return getNextAuthGoogleCallbackUrl(origin);
 }
 
 export function getAppleOAuthRedirectUri(origin?: string): string {

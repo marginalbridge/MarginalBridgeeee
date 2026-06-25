@@ -17,17 +17,26 @@ const OAUTH_ERROR_MESSAGES: Record<string, string> = {
   google_token_failed:
     "Google token alınamadı. Ayarları kontrol edip tekrar deneyin.",
   google_redirect_mismatch:
-    "Redirect URI uyuşmuyor. Google Console'a tam callback adresini eklemeniz gerekiyor (aşağıdaki adres).",
+    "Redirect URI uyuşmuyor. Google Console'a aşağıdaki NextAuth callback adresini birebir ekleyin.",
   google_invalid_client:
     "GOOGLE_CLIENT_ID veya GOOGLE_CLIENT_SECRET hatalı. Vercel env değerlerini kontrol edin.",
   google_profile_failed: "Google profil bilgisi alınamadı.",
+  OAuthCallback:
+    "Google callback hatası (redirect_uri_mismatch). Google Console'da doğru callback adresi kayıtlı değil.",
+  OAuthSignin: "Google girişi başlatılamadı. Client ID / Secret kontrol edin.",
+  Configuration: "NextAuth yapılandırması eksik (NEXTAUTH_SECRET veya Google env).",
+  AccessDenied: "Google girişi reddedildi veya hesap oluşturulamadı.",
 };
 
 function resolveInitialError(error?: string, redirectUriHint?: string): string {
   if (!error) return "";
   const base = OAUTH_ERROR_MESSAGES[error] ?? decodeURIComponent(error);
-  if (error === "google_redirect_mismatch" && redirectUriHint) {
-    return `${base}\n\nEklemeniz gereken adres:\n${decodeURIComponent(redirectUriHint)}`;
+  const needsUri =
+    error === "google_redirect_mismatch" ||
+    error === "OAuthCallback" ||
+    error === "OAuthSignin";
+  if (needsUri && redirectUriHint) {
+    return `${base}\n\nGoogle Console → Authorized redirect URIs:\n${decodeURIComponent(redirectUriHint)}\n\nKontrol: /api/health/oauth`;
   }
   return base;
 }

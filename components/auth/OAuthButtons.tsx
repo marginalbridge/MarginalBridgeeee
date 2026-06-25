@@ -26,7 +26,7 @@ export function OAuthButtons({
       <div className="grid gap-3">
         {googleEnabled && (
           <Link
-            href={`/api/auth/oauth/google${query}`}
+            href={`/api/auth/signin/google?callbackUrl=${encodeURIComponent(redirect)}`}
             className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-surface-border bg-white px-4 py-3 text-sm font-semibold text-gray-800 shadow-sm transition hover:bg-gray-50"
           >
             <GoogleIcon />
