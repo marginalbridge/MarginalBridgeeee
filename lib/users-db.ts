@@ -64,14 +64,12 @@ export async function listUsers(): Promise<PublicUser[]> {
 }
 
 export async function createUser(input: CreateEmailUserInput): Promise<PublicUser> {
-  const user = await withPostgresModule(
+  return withPostgresModule(
     "users",
     () => import("@/lib/db/users-postgres"),
     () => memCreateEmailUser(input),
     (pg) => pg.pgCreateEmailUser(input)
   );
-  void notifyAdminNewUser(user);
-  return user;
 }
 
 export async function findOrCreateOAuthUser(
@@ -84,7 +82,7 @@ export async function findOrCreateOAuthUser(
     (pg) => pg.pgFindOrCreateOAuthUser(input)
   );
   if (result.isNew) {
-    void notifyAdminNewUser(result.user);
+    await notifyAdminNewUser(result.user);
   }
   return result.user;
 }

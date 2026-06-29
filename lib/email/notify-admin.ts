@@ -3,6 +3,24 @@ import type { PublicUser } from "@/types/user";
 const ADMIN_NOTIFY_EMAIL =
   process.env.ADMIN_NOTIFY_EMAIL?.trim() || "marginalbridgee@gmail.com";
 
+export function getEmailConfigStatus() {
+  const hasResend = Boolean(process.env.RESEND_API_KEY?.trim());
+  const smtpUser = process.env.SMTP_USER?.trim();
+  const smtpPass = process.env.SMTP_PASS?.trim();
+  const hasSmtp = Boolean(smtpUser && smtpPass);
+
+  return {
+    adminNotifyEmail: ADMIN_NOTIFY_EMAIL,
+    resend: hasResend,
+    smtp: hasSmtp,
+    smtpUser: smtpUser ? `${smtpUser.slice(0, 3)}***` : null,
+    configured: hasResend || hasSmtp,
+    hint: hasResend || hasSmtp
+      ? "OK"
+      : "Vercel env: SMTP_USER + SMTP_PASS veya RESEND_API_KEY ekleyin, sonra redeploy.",
+  };
+}
+
 function buildRegistrationEmail(user: PublicUser) {
   const providerLabel =
     user.authProvider === "email"
@@ -23,7 +41,7 @@ function buildRegistrationEmail(user: PublicUser) {
     `Giriş yöntemi: ${providerLabel}`,
     `Kayıt zamanı: ${new Date(user.createdAt).toLocaleString("tr-TR")}`,
     "",
-    "Yönetici paneli: /admin",
+    "Yönetici paneli: https://www.marginalbridge.com/admin",
   ].join("\n");
 
   const html = `
@@ -93,7 +111,7 @@ async function sendViaSmtp(payload: {
   html: string;
 }): Promise<boolean> {
   const user = process.env.SMTP_USER?.trim();
-  const pass = process.env.SMTP_PASS?.trim();
+  const pass = process.env.SMTP_PASS?.trim().replace(/\s/g, "");
   if (!user || !pass) return false;
 
   const nodemailer = await import("nodemailer");
@@ -118,19 +136,37 @@ async function sendViaSmtp(payload: {
   return true;
 }
 
-/** Yeni kayıt bildirimi — hata olursa kayıt akışını bozmaz. */
-export async function notifyAdminNewUser(user: PublicUser): Promise<void> {
+/**
+ * Yeni kayıt bildirimi — e-posta / Google / Apple kayıtlarında çağrılır.
+ * Kayıt akışını bozmaz; başarılıysa true döner.
+ */
+export async function notifyAdminNewUser(user: PublicUser): Promise<boolean> {
   try {
+    const status = getEmailConfigStatus();
+    if (!status.configured) {
+      console.warn(
+        "[notify-admin] E-posta yapılandırması yok. Yeni kayıt:",
+        user.email
+      );
+      return false;
+    }
+
     const payload = buildRegistrationEmail(user);
 
-    if (await sendViaResend(payload)) return;
-    if (await sendViaSmtp(payload)) return;
+    if (await sendViaResend(payload)) {
+      console.info("[notify-admin] Resend ile gönderildi:", user.email);
+      return true;
+    }
 
-    console.warn(
-      "[notify-admin] E-posta gönderilemedi (RESEND_API_KEY veya SMTP ayarlayın). Yeni kayıt:",
-      user.email
-    );
+    if (await sendViaSmtp(payload)) {
+      console.info("[notify-admin] SMTP ile gönderildi:", user.email);
+      return true;
+    }
+
+    console.error("[notify-admin] Gönderim başarısız:", user.email);
+    return false;
   } catch (error) {
     console.error("[notify-admin] Bildirim hatası:", error);
+    return false;
   }
 }

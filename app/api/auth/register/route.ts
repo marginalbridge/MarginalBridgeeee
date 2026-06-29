@@ -1,4 +1,5 @@
 import { sanitizeDbError } from "@/lib/db/config";
+import { notifyAdminNewUser } from "@/lib/email/notify-admin";
 import { createUser } from "@/lib/users-db";
 import { createSession } from "@/lib/session";
 import { NextRequest, NextResponse } from "next/server";
@@ -28,6 +29,13 @@ export async function POST(request: NextRequest) {
     }
 
     const user = await createUser({ email, password, name, company });
+
+    // Normal kayıt bildirimi — Vercel'de tamamlanması için await
+    const mailSent = await notifyAdminNewUser(user);
+    if (!mailSent) {
+      console.warn("[register] Admin bildirim maili gönderilemedi:", user.email);
+    }
+
     await createSession(user.id);
 
     return NextResponse.json({
