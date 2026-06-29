@@ -166,11 +166,11 @@ export async function pgCreateEmailUser(input: CreateEmailUserInput): Promise<Pu
 
 export async function pgFindOrCreateOAuthUser(
   input: CreateOAuthUserInput
-): Promise<PublicUser> {
+): Promise<{ user: PublicUser; isNew: boolean }> {
   await ensureSchema();
 
   const byProvider = await pgFindUserByOAuth(input.authProvider, input.authProviderId);
-  if (byProvider) return toPublicUser(byProvider);
+  if (byProvider) return { user: toPublicUser(byProvider), isNew: false };
 
   const byEmail = await pgFindUserByEmail(input.email);
   if (byEmail) {
@@ -185,7 +185,7 @@ export async function pgFindOrCreateOAuthUser(
     `;
     const updated = await pgFindUserById(byEmail.id);
     if (!updated) throw new Error("OAuth kullanıcı güncellenemedi.");
-    return toPublicUser(updated);
+    return { user: toPublicUser(updated), isNew: false };
   }
 
   const sql = getSql();
@@ -215,7 +215,20 @@ export async function pgFindOrCreateOAuthUser(
   await initializeUserTenant(id);
   const user = await pgFindUserById(id);
   if (!user) throw new Error("OAuth kullanıcı oluşturulamadı.");
-  return toPublicUser(user);
+  return { user: toPublicUser(user), isNew: true };
+}
+
+export async function pgDeleteUser(id: string): Promise<boolean> {
+  await ensureSchema();
+  const current = await pgFindUserById(id);
+  if (!current) return false;
+  if (current.role === "admin") {
+    throw new Error("Yönetici hesabı silinemez.");
+  }
+
+  const sql = getSql();
+  const rows = await sql`DELETE FROM users WHERE id = ${id} RETURNING id`;
+  return rows.length > 0;
 }
 
 export async function pgVerifyPassword(user: User, password: string): Promise<boolean> {

@@ -27,13 +27,25 @@ function GoogleIcon() {
   );
 }
 
-export default function LoginButton({ callbackUrl = "/dashboard", className = "" }) {
+export default function LoginButton({
+  callbackUrl = "/dashboard",
+  className = "",
+  signInOnly = false,
+}) {
   const { data: session, status } = useSession();
   const [loading, setLoading] = useState(false);
+
+  async function clearStaleAuth() {
+    await fetch("/api/auth/clear", {
+      method: "POST",
+      credentials: "same-origin",
+    });
+  }
 
   async function handleGoogleSignIn() {
     setLoading(true);
     try {
+      await clearStaleAuth();
       await signIn("google", { callbackUrl });
     } finally {
       setLoading(false);
@@ -43,14 +55,16 @@ export default function LoginButton({ callbackUrl = "/dashboard", className = ""
   async function handleSignOut() {
     setLoading(true);
     try {
-      await fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" });
-      await signOut({ callbackUrl: "/login" });
+      await clearStaleAuth();
+      await signOut({ callbackUrl: "/login?fresh=1" });
     } finally {
       setLoading(false);
     }
   }
 
-  if (status === "loading") {
+  const showLoggedIn = !signInOnly && session?.user;
+
+  if (status === "loading" && !signInOnly) {
     return (
       <div
         className={`inline-flex items-center justify-center gap-2 rounded-xl border border-surface-border bg-white px-4 py-3 text-sm font-medium text-gray-600 shadow-sm ${className}`}
@@ -61,7 +75,7 @@ export default function LoginButton({ callbackUrl = "/dashboard", className = ""
     );
   }
 
-  if (session?.user) {
+  if (showLoggedIn) {
     const displayName = session.user.name || session.user.email || "Kullanıcı";
 
     return (
@@ -106,23 +120,36 @@ export default function LoginButton({ callbackUrl = "/dashboard", className = ""
   }
 
   return (
-    <button
-      type="button"
-      onClick={handleGoogleSignIn}
-      disabled={loading}
-      className={`inline-flex w-full items-center justify-center gap-3 rounded-xl border border-surface-border bg-white px-4 py-3.5 text-sm font-semibold text-gray-800 shadow-sm transition hover:bg-gray-50 hover:shadow-md disabled:opacity-60 ${className}`}
-    >
-      {loading ? (
-        <>
-          <Loader2 className="h-5 w-5 animate-spin text-bridge-600" />
-          Google&apos;a yönlendiriliyor...
-        </>
-      ) : (
-        <>
-          <GoogleIcon />
-          Google ile Giriş Yap
-        </>
+    <div className={className}>
+      <button
+        type="button"
+        onClick={handleGoogleSignIn}
+        disabled={loading}
+        className="inline-flex w-full items-center justify-center gap-3 rounded-xl border border-surface-border bg-white px-4 py-3.5 text-sm font-semibold text-gray-800 shadow-sm transition hover:bg-gray-50 hover:shadow-md disabled:opacity-60"
+      >
+        {loading ? (
+          <>
+            <Loader2 className="h-5 w-5 animate-spin text-bridge-600" />
+            Google&apos;a yönlendiriliyor...
+          </>
+        ) : (
+          <>
+            <GoogleIcon />
+            Google ile Giriş Yap
+          </>
+        )}
+      </button>
+      {signInOnly && (
+        <p className="mt-3 text-center text-xs text-gray-500">
+          Giriş yapamıyorsanız{" "}
+          <a
+            href="/api/auth/clear?redirect=/login%3Ffresh%3D1"
+            className="text-bridge-600 hover:text-bridge-700"
+          >
+            oturumu sıfırlayın
+          </a>
+        </p>
       )}
-    </button>
+    </div>
   );
 }

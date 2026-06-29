@@ -1,4 +1,5 @@
 import { AuthLayout } from "@/components/auth/AuthLayout";
+import { AuthCookieReset } from "@/components/auth/AuthCookieReset";
 import { LoginForm } from "@/components/auth/LoginForm";
 import LoginButton from "@/components/LoginButton";
 import { getNextAuthGoogleCallbackUrl } from "@/lib/oauth/config";
@@ -32,11 +33,12 @@ export default async function LoginPage({
       subtitle="MarginalBridge hesabınıza giriş yapın"
     >
       <div className="space-y-6">
+        <AuthCookieReset />
         <div className="space-y-3">
           <p className="text-center text-xs font-medium uppercase tracking-wider text-gray-500">
             Hızlı giriş
           </p>
-          <LoginButton callbackUrl={destination} />
+          <LoginButton callbackUrl={destination} signInOnly />
         </div>
 
         <div className="relative pt-1">

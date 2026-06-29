@@ -1,5 +1,6 @@
 import { getCurrentUser, isAdmin } from "@/lib/auth";
-import { listUsers, updateUser } from "@/lib/users-db";
+import { sanitizeDbError } from "@/lib/db/config";
+import { deleteUser, findUserById, listUsers, updateUser } from "@/lib/users-db";
 import type { UpdateUserPayload, UserStatus } from "@/types/user";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -82,6 +83,63 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json(
       { error: "Güncelleme başarısız." },
       { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  const currentUser = await getCurrentUser();
+
+  if (!currentUser || !isAdmin(currentUser)) {
+    return NextResponse.json({ error: "Yetkisiz erişim." }, { status: 403 });
+  }
+
+  try {
+    const body = await request.json();
+    const { userId } = body as { userId?: string };
+
+    if (!userId || typeof userId !== "string") {
+      return NextResponse.json(
+        { error: "Kullanıcı ID gereklidir." },
+        { status: 400 }
+      );
+    }
+
+    if (userId === currentUser.id) {
+      return NextResponse.json(
+        { error: "Kendi hesabınızı silemezsiniz." },
+        { status: 400 }
+      );
+    }
+
+    const target = await findUserById(userId);
+    if (!target) {
+      return NextResponse.json(
+        { error: "Kullanıcı bulunamadı." },
+        { status: 404 }
+      );
+    }
+
+    if (target.role === "admin") {
+      return NextResponse.json(
+        { error: "Yönetici hesabı silinemez." },
+        { status: 400 }
+      );
+    }
+
+    const deleted = await deleteUser(userId);
+    if (!deleted) {
+      return NextResponse.json(
+        { error: "Kullanıcı silinemedi." },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return NextResponse.json(
+      { error: sanitizeDbError(error) },
+      { status: 400 }
     );
   }
 }

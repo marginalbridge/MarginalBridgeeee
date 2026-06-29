@@ -9,6 +9,7 @@ import {
   Percent,
   Save,
   Shield,
+  Trash2,
   UserCheck,
   UserX,
 } from "lucide-react";
@@ -24,6 +25,7 @@ export function UserManagement() {
   const [users, setUsers] = useState<PublicUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [edits, setEdits] = useState<
     Record<
@@ -137,6 +139,43 @@ export function UserManagement() {
         freeTrialEnd: end.toISOString().slice(0, 10),
       },
     }));
+  }
+
+  async function removeUser(userId: string, userName: string) {
+    if (
+      !window.confirm(
+        `${userName} kullanıcısını kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`
+      )
+    ) {
+      return;
+    }
+
+    setDeletingId(userId);
+    setError("");
+
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "Kullanıcı silinemedi.");
+        return;
+      }
+
+      setUsers((prev) => prev.filter((user) => user.id !== userId));
+      setEdits((prev) => {
+        const next = { ...prev };
+        delete next[userId];
+        return next;
+      });
+    } catch {
+      setError("Bağlantı hatası.");
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   const inputClass =
@@ -304,19 +343,34 @@ export function UserManagement() {
 
                     <td className="px-4 py-4">
                       {user.role !== "admin" && (
-                        <button
-                          type="button"
-                          onClick={() => saveUser(user.id)}
-                          disabled={savingId === user.id}
-                          className="inline-flex items-center gap-1.5 rounded-lg bg-bridge-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-bridge-500 disabled:opacity-60"
-                        >
-                          {savingId === user.id ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            <Save className="h-3.5 w-3.5" />
-                          )}
-                          Kaydet
-                        </button>
+                        <div className="flex flex-col gap-2">
+                          <button
+                            type="button"
+                            onClick={() => saveUser(user.id)}
+                            disabled={savingId === user.id || deletingId === user.id}
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-bridge-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-bridge-500 disabled:opacity-60"
+                          >
+                            {savingId === user.id ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Save className="h-3.5 w-3.5" />
+                            )}
+                            Kaydet
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removeUser(user.id, user.name)}
+                            disabled={savingId === user.id || deletingId === user.id}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60"
+                          >
+                            {deletingId === user.id ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-3.5 w-3.5" />
+                            )}
+                            Sil
+                          </button>
+                        </div>
                       )}
                     </td>
                   </tr>

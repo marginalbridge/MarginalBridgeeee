@@ -142,9 +142,9 @@ export async function memCreateEmailUser(input: CreateEmailUserInput): Promise<P
 
 export async function memFindOrCreateOAuthUser(
   input: CreateOAuthUserInput
-): Promise<PublicUser> {
+): Promise<{ user: PublicUser; isNew: boolean }> {
   const byProvider = await memFindUserByOAuth(input.authProvider, input.authProviderId);
-  if (byProvider) return memoryToPublicUser(byProvider);
+  if (byProvider) return { user: memoryToPublicUser(byProvider), isNew: false };
 
   const byEmail = await memFindUserByEmail(input.email);
   if (byEmail) {
@@ -152,7 +152,7 @@ export async function memFindOrCreateOAuthUser(
     byEmail.authProviderId = input.authProviderId;
     byEmail.name = input.name.trim();
     byEmail.updatedAt = new Date().toISOString();
-    return memoryToPublicUser(byEmail);
+    return { user: memoryToPublicUser(byEmail), isNew: false };
   }
 
   const users = await ensureMemoryUsers();
@@ -177,7 +177,18 @@ export async function memFindOrCreateOAuthUser(
   };
 
   users.push(user);
-  return memoryToPublicUser(user);
+  return { user: memoryToPublicUser(user), isNew: true };
+}
+
+export async function memDeleteUser(id: string): Promise<boolean> {
+  const users = await ensureMemoryUsers();
+  const index = users.findIndex((user) => user.id === id);
+  if (index === -1) return false;
+  if (users[index].role === "admin") {
+    throw new Error("Yönetici hesabı silinemez.");
+  }
+  users.splice(index, 1);
+  return true;
 }
 
 export async function memVerifyPassword(user: User, password: string): Promise<boolean> {

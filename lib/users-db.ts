@@ -1,6 +1,8 @@
 import { withPostgresModule } from "@/lib/db/storage";
+import { notifyAdminNewUser } from "@/lib/email/notify-admin";
 import {
   memCreateEmailUser,
+  memDeleteUser,
   memFindOrCreateOAuthUser,
   memFindUserByEmail,
   memFindUserById,
@@ -62,22 +64,37 @@ export async function listUsers(): Promise<PublicUser[]> {
 }
 
 export async function createUser(input: CreateEmailUserInput): Promise<PublicUser> {
-  return withPostgresModule(
+  const user = await withPostgresModule(
     "users",
     () => import("@/lib/db/users-postgres"),
     () => memCreateEmailUser(input),
     (pg) => pg.pgCreateEmailUser(input)
   );
+  void notifyAdminNewUser(user);
+  return user;
 }
 
 export async function findOrCreateOAuthUser(
   input: CreateOAuthUserInput
 ): Promise<PublicUser> {
-  return withPostgresModule(
+  const result = await withPostgresModule(
     "users",
     () => import("@/lib/db/users-postgres"),
     () => memFindOrCreateOAuthUser(input),
     (pg) => pg.pgFindOrCreateOAuthUser(input)
+  );
+  if (result.isNew) {
+    void notifyAdminNewUser(result.user);
+  }
+  return result.user;
+}
+
+export async function deleteUser(id: string): Promise<boolean> {
+  return withPostgresModule(
+    "users",
+    () => import("@/lib/db/users-postgres"),
+    () => memDeleteUser(id),
+    (pg) => pg.pgDeleteUser(id)
   );
 }
 
