@@ -11,6 +11,7 @@
     "start": "next start",
     "lint": "next lint",
     "db:init": "npx tsx scripts/init-db.ts",
+    "gtip:fix-encoding": "node scripts/fix-gtip-encoding.mjs",
     "env:secret": "node scripts/generate-secret.mjs"
   },
   "dependencies": {

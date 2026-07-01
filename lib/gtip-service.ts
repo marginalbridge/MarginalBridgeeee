@@ -1,11 +1,12 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { fixTurkishText } from "@/lib/fix-turkish-text";
 import { fetchUsdTryRate } from "@/lib/tcmb";
 import type { GtipEntry } from "@/types/gtip";
 
-export const GTIP_SYNC_VERSION = 7;
-export const GTIP_MATRIX_VERSION = 7;
+export const GTIP_SYNC_VERSION = 8;
+export const GTIP_MATRIX_VERSION = 8;
 export const GTIP_TARIFF_YEAR = 2026;
 export const GTIP_SOURCE =
   "Türk Gümrük Tarife Cetveli (Karar Sayısı: 10781, RG 30.12.2025/33123)";
@@ -57,14 +58,13 @@ function loadBundledEntries(): GtipEntry[] {
 
   const raw = fs.readFileSync(resolveDataPath(), "utf8");
   const seed = JSON.parse(raw) as GtipSeedFile;
-  const fix = fixMojibake;
   const entries = seed.entries.map((entry) => ({
     ...entry,
-    description: fix(entry.description),
-    chapter: fix(entry.chapter),
-    unit: fix(entry.unit),
+    description: fixTurkishText(entry.description),
+    chapter: fixTurkishText(entry.chapter),
+    unit: fixTurkishText(entry.unit),
     keywords: Array.isArray(entry.keywords)
-      ? entry.keywords.map((kw) => fix(String(kw)))
+      ? entry.keywords.map((kw) => fixTurkishText(String(kw)))
       : [],
     year: seed.meta.year,
     source: GTIP_SOURCE,
@@ -72,19 +72,6 @@ function loadBundledEntries(): GtipEntry[] {
 
   g.__marginalBridgeGtipEntries = entries;
   return entries;
-}
-
-function fixMojibake(value: unknown): string {
-  const input = typeof value === "string" ? value : String(value ?? "");
-  // Common UTF-8-as-Latin1 mojibake markers in TR text
-  if (!/[ÃÅ]/.test(input)) return input;
-
-  try {
-    // Re-interpret the current string as latin1 bytes and decode as utf8.
-    return Buffer.from(input, "latin1").toString("utf8");
-  } catch {
-    return input;
-  }
 }
 
 function getMemoryCache(): GtipCacheFile | null {
