@@ -1,21 +1,19 @@
+import { getLiveUsdTryRate } from "@/lib/exchange-rates";
 import { mapTurkishCategory } from "@/lib/category-map";
+import { upsertBotRulesFromSync } from "@/lib/bot-rules-db";
 import {
-  replaceStoreLiveData,
+  storeToCredentials,
+  marketplaceSupportsReprice,
+  syncMarketplaceWithAdapter,
+} from "@/lib/marketplace-adapter";
+import {
+  appendBotLogs,
+  replaceStoreOrders,
   saveTrendyolProductsToDb,
   upsertCatalogFromSync,
 } from "@/lib/orders-db";
-import {
-  fetchShopifyProducts,
-  isShopifyStore,
-  testShopifyConnection,
-} from "@/lib/shopify-client";
 import { findStoreById } from "@/lib/stores-db";
 import { toPublicStore } from "@/lib/stores-utils";
-import {
-  fetchTrendyolProductsWithFallback,
-  type TrendyolProduct,
-} from "@/lib/trendyol-mock";
-import { fetchTrendyolOrders } from "@/lib/trendyol-orders";
 import type { BotLog } from "@/types";
 import type { ConnectedStore, PublicStore } from "@/types/store";
 import { withPostgresModule } from "@/lib/db/storage";
@@ -73,63 +71,71 @@ export async function syncMarketplaceStore(
     throw new Error("Mağaza bulunamadı.");
   }
 
-  let products: TrendyolProduct[] = [];
-  let orders: Awaited<ReturnType<typeof fetchTrendyolOrders>>["orders"] = [];
-  let shopifyProducts: Awaited<ReturnType<typeof fetchShopifyProducts>> = [];
+  const credentials = storeToCredentials(store);
+  const { products, orders } = await syncMarketplaceWithAdapter(credentials);
 
   if (store.platform === "Trendyol") {
-    const [productResult, orderResult] = await Promise.all([
-      fetchTrendyolProductsWithFallback({
-        supplierId: store.sellerId,
-        apiKey: store.apiKey,
-        apiSecret: store.apiSecret,
-        page: 0,
-        size: 50,
-      }),
-      fetchTrendyolOrders({
-        supplierId: store.sellerId,
-        apiKey: store.apiKey,
-        apiSecret: store.apiSecret,
-      }),
-    ]);
-
-    products = productResult.products;
-    orders = orderResult.orders;
-    await saveTrendyolProductsToDb(userId, products);
-  } else if (store.platform === "WebSitesi" && isShopifyStore(store.sellerId)) {
-    await testShopifyConnection(store.sellerId, store.apiKey);
-    shopifyProducts = await fetchShopifyProducts(store.sellerId, store.apiKey);
+    await saveTrendyolProductsToDb(
+      userId,
+      products.map((product) => ({
+        id: product.externalId,
+        sku: product.sku,
+        barcode: product.barcode,
+        title: product.title,
+        category: product.category,
+        salePrice: product.salePrice,
+        listPrice: product.listPrice,
+        quantity: product.quantity,
+        currency: "TRY" as const,
+        buyboxPrice: product.buyboxPrice,
+      }))
+    );
   }
 
-  const catalogItems =
-    store.platform === "Trendyol"
-      ? products.map((product) => ({
-          sku: product.sku,
-          name: product.title,
-          priceTl: product.salePrice,
-          stock: product.quantity,
-          category: mapTurkishCategory(product.category),
-          storeId: store.id,
-          platform: store.platform,
-        }))
-      : shopifyProducts.map((product) => ({
-          sku: product.sku,
-          name: product.title,
-          priceTl: product.price,
-          stock: product.quantity,
-          category: mapTurkishCategory(product.category),
-          storeId: store.id,
-          platform: store.platform,
-        }));
+  const catalogItems = products.map((product) => ({
+    sku: product.sku,
+    barcode: product.barcode,
+    name: product.title,
+    priceTl: product.salePrice,
+    stock: product.quantity,
+    category: mapTurkishCategory(product.category),
+    storeId: store.id,
+    platform: store.platform,
+    buyboxPrice: product.buyboxPrice,
+    listPrice: product.listPrice,
+    externalId: product.externalId,
+  }));
 
   const productCount = catalogItems.length;
-
   const logs = buildSyncLogs(store.platform, productCount, orders.length);
 
-  await replaceStoreLiveData(userId, store.id, orders, logs);
+  await replaceStoreOrders(userId, store.id, orders);
+  await appendBotLogs(userId, store.id, logs);
 
   if (catalogItems.length > 0) {
-    await upsertCatalogFromSync(userId, catalogItems);
+    const usdTryRate = await getLiveUsdTryRate();
+
+    await upsertCatalogFromSync(
+      userId,
+      catalogItems.map(({ buyboxPrice: _buybox, listPrice: _list, externalId: _ext, ...item }) => item)
+    );
+
+    await upsertBotRulesFromSync(
+      userId,
+      store.id,
+      catalogItems.map((item) => ({
+        sku: item.sku,
+        barcode: item.barcode,
+        name: item.name,
+        marketplace: store.platform,
+        category: item.category,
+        salePrice: item.priceTl,
+        listPrice: item.listPrice,
+        stock: item.stock,
+        buyboxPrice: item.buyboxPrice,
+      })),
+      { usdTryRate }
+    );
   }
 
   const lastSyncAt = new Date().toISOString();
@@ -139,6 +145,15 @@ export async function syncMarketplaceStore(
     lastSyncAt,
   });
 
+  if (store.autoReprice && marketplaceSupportsReprice(store.platform) && productCount > 0) {
+    try {
+      const { repriceStore } = await import("@/lib/automation/reprice-store");
+      await repriceStore({ userId, storeId: store.id });
+    } catch (error) {
+      console.error(`[marketplace-sync] ${store.platform} auto reprice failed:`, error);
+    }
+  }
+
   return {
     store: updatedStore,
     productCount,
@@ -146,4 +161,4 @@ export async function syncMarketplaceStore(
   };
 }
 
-export type { TrendyolProduct };
+export type { TrendyolProduct } from "@/lib/trendyol-mock";

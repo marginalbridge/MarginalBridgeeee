@@ -1,11 +1,13 @@
 import { MarketplaceBadge } from "@/components/dashboard/MarketplaceBadge";
 import { calculateCostBreakdown } from "@/lib/marginal-engine";
+import { USD_TRY_RATE } from "@/lib/constants";
 import { formatPercent, formatTl, formatUsd } from "@/lib/format";
 import type { Order, OrderStatus } from "@/types";
 
 interface OrdersTableProps {
   orders: Order[];
   emptyMessage?: string;
+  usdTryRate?: number;
 }
 
 function StatusBadge({ status }: { status: OrderStatus }) {
@@ -26,13 +28,16 @@ function MarketplaceCell({ marketplace }: { marketplace: Order["marketplace"] })
   return <MarketplaceBadge marketplace={marketplace} />;
 }
 
-export function OrdersTable({ orders, emptyMessage }: OrdersTableProps) {
+export function OrdersTable({ orders, emptyMessage, usdTryRate = USD_TRY_RATE }: OrdersTableProps) {
   return (
     <div className="glass-card overflow-hidden">
       <div className="border-b border-surface-border px-6 py-4">
         <h2 className="text-lg font-semibold text-gray-900">Canlı Siparişler</h2>
         <p className="text-sm text-gray-600">
           Gerçek zamanlı marj takibi ile cross-border siparişler
+          <span className="ml-2 font-mono text-xs text-bridge-700">
+            · Kur: {usdTryRate.toFixed(2)} ₺/USD
+          </span>
         </p>
       </div>
 
@@ -63,7 +68,8 @@ export function OrdersTable({ orders, emptyMessage }: OrdersTableProps) {
                 order.weightDesi,
                 order.category,
                 order.marketplace,
-                order.finalPriceTl
+                order.finalPriceTl,
+                usdTryRate
               );
 
               const marginColor =

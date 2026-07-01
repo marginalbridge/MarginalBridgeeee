@@ -25,6 +25,7 @@ export interface CostMatrixSimulatorInput {
   marketplace: Marketplace;
   sellingPriceTl: number;
   exchangeRateUsd?: number;
+  exchangeRateEur?: number;
 }
 
 export interface CostMatrixSimulatorResult {
@@ -44,10 +45,11 @@ export interface CostMatrixSimulatorResult {
 function toUsd(
   amount: number,
   currency: PurchaseCurrency,
-  usdTry: number
+  usdTry: number,
+  eurTry: number
 ): number {
   if (currency === "USD") return amount;
-  if (currency === "EUR") return amount * (EUR_TRY_RATE / usdTry);
+  if (currency === "EUR") return amount * (eurTry / usdTry);
   return amount / usdTry;
 }
 
@@ -55,7 +57,8 @@ export function simulateCostMatrix(
   input: CostMatrixSimulatorInput
 ): CostMatrixSimulatorResult {
   const usdTry = input.exchangeRateUsd ?? USD_TRY_RATE;
-  const productCostUsd = toUsd(input.purchasePrice, input.currency, usdTry);
+  const eurTry = input.exchangeRateEur ?? EUR_TRY_RATE;
+  const productCostUsd = toUsd(input.purchasePrice, input.currency, usdTry, eurTry);
   const baseCostTl = productCostUsd * usdTry;
 
   const category = "General";

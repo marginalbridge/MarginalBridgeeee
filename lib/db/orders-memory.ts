@@ -33,11 +33,10 @@ export async function memListBotLogsByUser(userId: string): Promise<BotLog[]> {
   );
 }
 
-export async function memReplaceStoreLiveData(
+export async function memReplaceStoreOrders(
   userId: string,
   storeId: string,
-  orders: Omit<Order, "id">[],
-  logs: Omit<BotLog, "id">[]
+  orders: Omit<Order, "id">[]
 ): Promise<void> {
   const withIds = (items: Omit<Order, "id">[]): Order[] =>
     items.map((item, index) => ({
@@ -45,23 +44,36 @@ export async function memReplaceStoreLiveData(
       id: `${storeId}-ord-${index}`,
     }));
 
-  const withLogIds = (items: Omit<BotLog, "id">[]): BotLog[] =>
-    items.map((item, index) => ({
-      ...item,
-      id: `${storeId}-log-${index}`,
-    }));
-
   const userOrders = ordersKey(userId);
   cache.__mbOrders![userId] = [
     ...userOrders.filter((o) => !o.id.startsWith(`${storeId}-`)),
     ...withIds(orders),
   ];
+}
+
+export async function memAppendBotLogs(
+  userId: string,
+  storeId: string,
+  logs: Omit<BotLog, "id">[]
+): Promise<void> {
+  const withLogIds = (items: Omit<BotLog, "id">[]): BotLog[] =>
+    items.map((item, index) => ({
+      ...item,
+      id: `${storeId}-log-${Date.now()}-${index}`,
+    }));
 
   const userLogs = logsKey(userId);
-  cache.__mbBotLogs![userId] = [
-    ...userLogs.filter((l) => !l.id.startsWith(`${storeId}-`)),
-    ...withLogIds(logs),
-  ];
+  cache.__mbBotLogs![userId] = [...withLogIds(logs), ...userLogs];
+}
+
+export async function memReplaceStoreLiveData(
+  userId: string,
+  storeId: string,
+  orders: Omit<Order, "id">[],
+  logs: Omit<BotLog, "id">[]
+): Promise<void> {
+  await memReplaceStoreOrders(userId, storeId, orders);
+  await memAppendBotLogs(userId, storeId, logs);
 }
 
 export async function memSaveTrendyolProducts(

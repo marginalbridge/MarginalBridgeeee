@@ -2,6 +2,8 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 
 import { DashboardLiveSection } from "@/components/dashboard/DashboardLiveSection";
 
+import { LiveRatesBoard } from "@/components/dashboard/LiveRatesBoard";
+
 import { MarketplaceHub } from "@/components/dashboard/MarketplaceHub";
 
 import { PendingAccess } from "@/components/dashboard/PendingAccess";
@@ -18,6 +20,7 @@ import { GtipMatrix } from "@/components/dashboard/GtipMatrix";
 
 import { TariffReference } from "@/components/dashboard/TariffReference";
 
+import { getLiveRatesForEngine } from "@/lib/exchange-rates";
 import { canAccessDashboard, getCurrentUser } from "@/lib/auth";
 
 import { listBotLogsByUser, listOrdersByUser } from "@/lib/orders-db";
@@ -51,6 +54,7 @@ export default async function DashboardPage() {
 
 
   const hasAccess = canAccessDashboard(user);
+  const liveRates = hasAccess ? await getLiveRatesForEngine() : null;
 
   let orders: Awaited<ReturnType<typeof listOrdersByUser>> = [];
   let botLogs: Awaited<ReturnType<typeof listBotLogsByUser>> = [];
@@ -101,6 +105,14 @@ export default async function DashboardPage() {
             subtitle="Cross-border satıcılar için gümrük, navlun ve buybox istihbaratı"
 
           />
+
+
+
+          <section className="mb-8">
+
+            <LiveRatesBoard />
+
+          </section>
 
 
 
@@ -183,6 +195,10 @@ export default async function DashboardPage() {
                 botLogs={liveBotLogs}
 
                 hasConnectedStore={hasConnectedStore}
+
+                usdTryRate={liveRates?.usdTry}
+
+                eurTryRate={liveRates?.eurTry}
 
               />
 

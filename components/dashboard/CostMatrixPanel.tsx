@@ -16,15 +16,20 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 interface CostMatrixPanelProps {
   selectedOrder: Order;
+  usdTryRate?: number;
 }
 
-export function CostMatrixPanel({ selectedOrder }: CostMatrixPanelProps) {
+export function CostMatrixPanel({
+  selectedOrder,
+  usdTryRate = USD_TRY_RATE,
+}: CostMatrixPanelProps) {
   const breakdown = calculateCostBreakdown(
     selectedOrder.productCostUsd,
     selectedOrder.weightDesi,
     selectedOrder.category,
     selectedOrder.marketplace,
-    selectedOrder.finalPriceTl
+    selectedOrder.finalPriceTl,
+    usdTryRate
   );
 
   const tariff = CUSTOMS_TARIFFS.find(
@@ -136,6 +141,9 @@ export function CostMatrixPanel({ selectedOrder }: CostMatrixPanelProps) {
       <div className="border-t border-surface-border px-6 py-3">
         <p className="text-xs text-gray-500">
           Formül: Toplam = Taban + Gümrük ({categoryLabel}) + Navlun ({selectedOrder.weightDesi} desi) + {selectedOrder.marketplace} Komisyonu
+          <span className="ml-2 font-mono text-bridge-700">
+            · Canlı kur: {usdTryRate.toFixed(2)} ₺/USD
+          </span>
         </p>
       </div>
     </div>

@@ -8,6 +8,7 @@ import { OrdersTable } from "@/components/dashboard/OrdersTable";
 
 import { StatCards } from "@/components/dashboard/StatCards";
 
+import { USD_TRY_RATE } from "@/lib/constants";
 import { getDashboardStats } from "@/lib/dashboard-stats";
 
 import { getCriticalMetrics, getLogisticsSummary } from "@/lib/critical-metrics";
@@ -24,6 +25,10 @@ interface DashboardLiveSectionProps {
 
   hasConnectedStore: boolean;
 
+  usdTryRate?: number;
+
+  eurTryRate?: number;
+
 }
 
 
@@ -35,6 +40,10 @@ export function DashboardLiveSection({
   botLogs,
 
   hasConnectedStore,
+
+  usdTryRate = USD_TRY_RATE,
+
+  eurTryRate,
 
 }: DashboardLiveSectionProps) {
 
@@ -52,7 +61,13 @@ export function DashboardLiveSection({
 
       <section className="mb-8">
 
-        <CostMatrixSimulator />
+        <CostMatrixSimulator
+
+          usdTryRate={usdTryRate}
+
+          eurTryRate={eurTryRate}
+
+        />
 
       </section>
 
@@ -90,6 +105,8 @@ export function DashboardLiveSection({
 
           orders={orders}
 
+          usdTryRate={usdTryRate}
+
           emptyMessage={
 
             hasConnectedStore
@@ -110,7 +127,7 @@ export function DashboardLiveSection({
 
         {featuredOrder ? (
 
-          <CostMatrixPanel selectedOrder={featuredOrder} />
+          <CostMatrixPanel selectedOrder={featuredOrder} usdTryRate={usdTryRate} />
 
         ) : (
 

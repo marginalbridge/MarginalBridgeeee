@@ -149,7 +149,8 @@ export function runRepricerEngine(
 }
 
 export function processMarginalBotRequest(
-  request: MarginalBotRequest
+  request: MarginalBotRequest,
+  exchangeRate: number = USD_TRY_RATE
 ): MarginalBotResponse {
   const repricer = runRepricerEngine(
     request.productCostUsd,
@@ -158,7 +159,7 @@ export function processMarginalBotRequest(
     request.marketplace,
     request.currentPriceTl,
     request.competitorPriceTl,
-    USD_TRY_RATE,
+    exchangeRate,
     MIN_PROFIT_MARGIN
   );
 
@@ -168,12 +169,12 @@ export function processMarginalBotRequest(
     request.category,
     request.marketplace,
     repricer.newPriceTl,
-    USD_TRY_RATE
+    exchangeRate
   );
 
   return {
     success: true,
-    exchangeRate: USD_TRY_RATE,
+    exchangeRate,
     costBreakdown,
     repricer: {
       ...repricer,

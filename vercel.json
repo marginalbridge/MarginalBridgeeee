@@ -1,5 +1,15 @@
 {
   "framework": "nextjs",
   "buildCommand": "npm run build",
-  "installCommand": "npm install --include=dev"
+  "installCommand": "npm install --include=dev",
+  "crons": [
+    {
+      "path": "/api/cron/sync",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/reprice",
+      "schedule": "*/5 * * * *"
+    }
+  ]
 }

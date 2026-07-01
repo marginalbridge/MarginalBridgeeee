@@ -8,6 +8,7 @@ export interface TrendyolProduct {
   listPrice: number;
   quantity: number;
   currency: "TRY";
+  buyboxPrice?: number;
 }
 
 export const TRENDYOL_MOCK_PRODUCTS: TrendyolProduct[] = [
@@ -109,6 +110,9 @@ export function normalizeTrendyolProducts(payload: unknown): TrendyolProduct[] {
       listPrice: Number(product.listPrice ?? product.salePrice ?? product.price ?? 999),
       quantity: Number(product.quantity ?? product.stock ?? 0),
       currency: "TRY" as const,
+      buyboxPrice: Number(
+        product.buyboxPrice ?? product.lowestPrice ?? product.competitorPrice ?? 0
+      ) || undefined,
     };
   });
 }

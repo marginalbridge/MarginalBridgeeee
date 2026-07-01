@@ -155,6 +155,62 @@ async function initSchema(): Promise<void> {
     ON bot_activity_logs (user_id, logged_at DESC)
   `);
 
+  await safeSchemaStep("bot_rules", () => sql`
+    CREATE TABLE IF NOT EXISTS bot_rules (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      store_id TEXT NOT NULL REFERENCES connected_stores(id) ON DELETE CASCADE,
+      sku TEXT NOT NULL,
+      barcode TEXT NOT NULL DEFAULT '',
+      name TEXT NOT NULL,
+      marketplace TEXT NOT NULL,
+      category TEXT NOT NULL,
+      product_cost_usd NUMERIC NOT NULL DEFAULT 0,
+      weight_desi NUMERIC NOT NULL DEFAULT 1,
+      current_price_tl NUMERIC NOT NULL,
+      list_price_tl NUMERIC NOT NULL,
+      competitor_price_tl NUMERIC NOT NULL DEFAULT 0,
+      floor_price_tl NUMERIC NOT NULL DEFAULT 0,
+      min_margin_percent NUMERIC NOT NULL DEFAULT 15,
+      stock INTEGER NOT NULL DEFAULT 0,
+      bot_enabled BOOLEAN NOT NULL DEFAULT true,
+      auto_competitor BOOLEAN NOT NULL DEFAULT true,
+      last_repriced_at TIMESTAMPTZ,
+      last_batch_request_id TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(user_id, store_id, sku)
+    )
+  `);
+
+  await safeSchemaStep("price_change_logs", () => sql`
+    CREATE TABLE IF NOT EXISTS price_change_logs (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      store_id TEXT REFERENCES connected_stores(id) ON DELETE SET NULL,
+      sku TEXT NOT NULL,
+      barcode TEXT,
+      previous_price_tl NUMERIC NOT NULL,
+      new_price_tl NUMERIC NOT NULL,
+      competitor_price_tl NUMERIC,
+      action TEXT NOT NULL,
+      batch_request_id TEXT,
+      status TEXT NOT NULL DEFAULT 'pending',
+      message TEXT NOT NULL DEFAULT '',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await safeSchemaStep("idx_bot_rules_user", () => sql`
+    CREATE INDEX IF NOT EXISTS idx_bot_rules_user
+    ON bot_rules (user_id, store_id)
+  `);
+
+  await safeSchemaStep("idx_price_change_logs_user", () => sql`
+    CREATE INDEX IF NOT EXISTS idx_price_change_logs_user
+    ON price_change_logs (user_id, created_at DESC)
+  `);
+
   await safeSchemaStep("cleanup_demo_orders", () => sql`
     DELETE FROM marketplace_orders
     WHERE order_number LIKE 'MB-2026-%'

@@ -9,13 +9,15 @@ import type { BotFloorSimulation, BotProductRow } from "@/types/bot-control";
 export function simulateBotFloor(input: {
   product: BotProductRow;
   competitorPriceTl: number;
+  exchangeRate?: number;
 }): BotFloorSimulation {
   const { product } = input;
+  const exchangeRate = input.exchangeRate ?? USD_TRY_RATE;
   const { landedCostTl } = calculateLandedCostTl(
     product.productCostUsd,
     product.weightDesi,
     product.category,
-    USD_TRY_RATE
+    exchangeRate
   );
 
   const calculatedFloor = calculateMinimumPriceTl(
@@ -33,7 +35,7 @@ export function simulateBotFloor(input: {
       product.category,
       product.marketplace,
       effectiveFloor,
-      USD_TRY_RATE
+      exchangeRate
     );
 
     return {
@@ -57,7 +59,7 @@ export function simulateBotFloor(input: {
     product.category,
     product.marketplace,
     targetPrice,
-    USD_TRY_RATE
+    exchangeRate
   );
 
   return {

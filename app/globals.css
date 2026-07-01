@@ -108,4 +108,21 @@
   .promo-zoom {
     animation: promo-zoom 4s ease-in-out infinite alternate;
   }
+
+  @keyframes rates-ticker {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  .animate-rates-ticker {
+    animation: rates-ticker 28s linear infinite;
+  }
+
+  .animate-rates-ticker:hover {
+    animation-play-state: paused;
+  }
 }

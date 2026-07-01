@@ -187,3 +187,77 @@ export async function createShopifyProduct(input: {
 
   return { productId: data.product.id, variantId: variant.id };
 }
+
+export async function fetchShopifyOrders(
+  shopUrl: string,
+  accessToken: string,
+  limit = 50
+): Promise<Array<Omit<import("@/types").Order, "id">>> {
+  const data = await shopifyRequest<{
+    orders: Array<{
+      id: number;
+      name: string;
+      created_at: string;
+      line_items: Array<{
+        name: string;
+        price: string;
+        sku: string | null;
+      }>;
+    }>;
+  }>(
+    shopUrl,
+    accessToken,
+    `/orders.json?status=any&limit=${Math.min(limit, 250)}&fields=id,name,created_at,line_items`
+  );
+
+  const orders: Array<Omit<import("@/types").Order, "id">> = [];
+
+  for (const order of data.orders ?? []) {
+    const orderedAt = new Date(order.created_at).toISOString();
+    order.line_items.forEach((line, index) => {
+      const finalPriceTl = Math.round(Number.parseFloat(line.price) || 0);
+      orders.push({
+        orderNumber:
+          order.line_items.length > 1
+            ? `${order.name}-${index + 1}`
+            : order.name,
+        marketplace: "WebSitesi",
+        productName: line.name,
+        productCostUsd:
+          finalPriceTl > 0 ? Math.round((finalPriceTl / 35) * 0.35 * 100) / 100 : 0,
+        weightDesi: 1,
+        category: "General",
+        status: "pending",
+        timestamp: orderedAt,
+        finalPriceTl,
+        competitorPriceTl: finalPriceTl > 0 ? finalPriceTl + 1 : 0,
+      });
+    });
+  }
+
+  return orders.slice(0, 100);
+}
+
+export async function updateShopifyVariantPrices(
+  shopUrl: string,
+  accessToken: string,
+  items: Array<{
+    externalId: string;
+    salePrice: number;
+    quantity: number;
+  }>
+): Promise<{ batchRequestId: string | null }> {
+  for (const item of items) {
+    await shopifyRequest(shopUrl, accessToken, `/variants/${item.externalId}.json`, {
+      method: "PUT",
+      body: JSON.stringify({
+        variant: {
+          id: Number(item.externalId),
+          price: item.salePrice.toFixed(2),
+        },
+      }),
+    });
+  }
+
+  return { batchRequestId: `shopify-${Date.now()}` };
+}

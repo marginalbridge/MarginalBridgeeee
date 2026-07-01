@@ -1,4 +1,6 @@
+import { getLiveUsdTryRate } from "@/lib/exchange-rates";
 import { processMarginalBotRequest } from "@/lib/marginal-engine";
+import { USD_TRY_RATE } from "@/lib/constants";
 import type { MarginalBotRequest, Marketplace } from "@/types";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -72,7 +74,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = processMarginalBotRequest(validated);
+    const exchangeRate = await getLiveUsdTryRate();
+    const result = processMarginalBotRequest(validated, exchangeRate);
 
     return NextResponse.json(result);
   } catch {
@@ -87,13 +90,14 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET() {
+  const exchangeRate = await getLiveUsdTryRate();
   return NextResponse.json({
     service: "MarginalBridge Bot API",
-    version: "1.0.0",
+    version: "1.1.0",
     endpoints: {
       POST: {
         description:
-          "Run customs/freight calculation and Price Warrior repricer simulation.",
+          "Run customs/freight calculation and Price Warrior repricer with live USD/TRY.",
         body: {
           productCostUsd: "number (USD)",
           weightDesi: "number",
@@ -105,9 +109,11 @@ export async function GET() {
       },
     },
     constants: {
-      usdTryRate: 33,
+      usdTryRate: exchangeRate,
+      fallbackUsdTryRate: USD_TRY_RATE,
       minProfitMargin: "15%",
       shippingFeePerDesi: "$5 USD",
+      liveRates: true,
     },
   });
 }

@@ -1,5 +1,9 @@
 import { getMarketplaceConfig, isValidWebsiteUrl, maskSecret } from "@/lib/marketplaces";
-import { isShopifyStore, testShopifyConnection } from "@/lib/shopify-client";
+import {
+  storeToCredentials,
+  testMarketplaceConnection,
+} from "@/lib/marketplace-adapter";
+import { isShopifyStore } from "@/lib/shopify-client";
 import type {
   ConnectedStore,
   ConnectStorePayload,
@@ -57,12 +61,7 @@ export async function simulateConnectionTest(payload: ConnectStorePayload): Prom
     throw new Error("API kimlik bilgileri doğrulanamadı. Anahtarları kontrol edin.");
   }
 
-  if (payload.platform === "WebSitesi" && isShopifyStore(payload.sellerId)) {
-    await testShopifyConnection(payload.sellerId, payload.apiKey);
-    return;
-  }
-
-  await new Promise((resolve) => setTimeout(resolve, 400));
+  await testMarketplaceConnection(storeToCredentials(payload));
 }
 
 export function isValidPlatform(value: unknown): value is MarketplacePlatform {

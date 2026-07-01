@@ -81,22 +81,16 @@ export async function pgListBotLogsByUser(userId: string): Promise<BotLog[]> {
   return (rows as BotLogRow[]).map(mapBotLog);
 }
 
-export async function pgReplaceStoreLiveData(
+export async function pgReplaceStoreOrders(
   userId: string,
   storeId: string,
-  orders: Omit<Order, "id">[],
-  logs: Omit<BotLog, "id">[]
+  orders: Omit<Order, "id">[]
 ): Promise<void> {
   await ensureSchema();
   const sql = getSql();
 
   await sql`
     DELETE FROM marketplace_orders
-    WHERE user_id = ${userId} AND store_id = ${storeId}
-  `;
-
-  await sql`
-    DELETE FROM bot_activity_logs
     WHERE user_id = ${userId} AND store_id = ${storeId}
   `;
 
@@ -123,6 +117,17 @@ export async function pgReplaceStoreLiveData(
       )
     `;
   }
+}
+
+export async function pgAppendBotLogs(
+  userId: string,
+  storeId: string,
+  logs: Omit<BotLog, "id">[]
+): Promise<void> {
+  if (logs.length === 0) return;
+
+  await ensureSchema();
+  const sql = getSql();
 
   for (const log of logs) {
     await sql`
@@ -139,6 +144,16 @@ export async function pgReplaceStoreLiveData(
       )
     `;
   }
+}
+
+export async function pgReplaceStoreLiveData(
+  userId: string,
+  storeId: string,
+  orders: Omit<Order, "id">[],
+  logs: Omit<BotLog, "id">[]
+): Promise<void> {
+  await pgReplaceStoreOrders(userId, storeId, orders);
+  await pgAppendBotLogs(userId, storeId, logs);
 }
 
 export async function pgSaveTrendyolProducts(

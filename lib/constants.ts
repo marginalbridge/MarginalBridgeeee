@@ -1,6 +1,6 @@
 import type { CustomsTariff, Marketplace } from "@/types";
 
-export const USD_TRY_RATE = 33;
+export const USD_TRY_RATE = 33; // Yedek kur — canlı kur alınamazsa kullanılır
 
 export const MIN_PROFIT_MARGIN = 0.15;
 

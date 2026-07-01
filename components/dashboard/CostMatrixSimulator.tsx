@@ -6,7 +6,7 @@ import { formatPercent, formatTl } from "@/lib/format";
 import type { Marketplace } from "@/types";
 import { getMarketplaceOptions } from "@/components/dashboard/MarketplaceBadge";
 import { Calculator, Globe, Percent, TrendingUp } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const ORIGIN_OPTIONS: { value: OriginCountry; label: string }[] = [
   { value: "china", label: "Çin" },
@@ -20,7 +20,42 @@ const CURRENCY_OPTIONS: { value: PurchaseCurrency; label: string }[] = [
   { value: "TRY", label: "TRY" },
 ];
 
-export function CostMatrixSimulator() {
+interface CostMatrixSimulatorProps {
+  usdTryRate?: number;
+  eurTryRate?: number;
+}
+
+export function CostMatrixSimulator({
+  usdTryRate: initialUsdTry,
+  eurTryRate: initialEurTry,
+}: CostMatrixSimulatorProps = {}) {
+  const [usdTryRate, setUsdTryRate] = useState(initialUsdTry ?? 33);
+  const [eurTryRate, setEurTryRate] = useState(initialEurTry ?? 36);
+
+  useEffect(() => {
+    if (initialUsdTry) setUsdTryRate(initialUsdTry);
+    if (initialEurTry) setEurTryRate(initialEurTry);
+  }, [initialUsdTry, initialEurTry]);
+
+  useEffect(() => {
+    async function refreshRates() {
+      try {
+        const response = await fetch("/api/exchange-rates", { cache: "no-store" });
+        const data = await response.json();
+        if (!response.ok) return;
+        const usd = data.rates?.find((r: { id: string }) => r.id === "usd-try");
+        const eur = data.rates?.find((r: { id: string }) => r.id === "eur-try");
+        if (usd?.rate) setUsdTryRate(usd.rate);
+        if (eur?.rate) setEurTryRate(eur.rate);
+      } catch {
+        // keep current rates
+      }
+    }
+
+    void refreshRates();
+    const timer = setInterval(refreshRates, 60_000);
+    return () => clearInterval(timer);
+  }, []);
   const [purchasePrice, setPurchasePrice] = useState("28.5");
   const [currency, setCurrency] = useState<PurchaseCurrency>("USD");
   const [originCountry, setOriginCountry] = useState<OriginCountry>("china");
@@ -51,8 +86,19 @@ export function CostMatrixSimulator() {
       weightDesi: desi,
       marketplace,
       sellingPriceTl: sell,
+      exchangeRateUsd: usdTryRate,
+      exchangeRateEur: eurTryRate,
     });
-  }, [purchasePrice, currency, originCountry, weightDesi, marketplace, sellingPriceTl]);
+  }, [
+    purchasePrice,
+    currency,
+    originCountry,
+    weightDesi,
+    marketplace,
+    sellingPriceTl,
+    usdTryRate,
+    eurTryRate,
+  ]);
 
   const inputClass =
     "w-full rounded-lg border border-surface-border bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-bridge-500 focus:ring-1 focus:ring-bridge-500/40";
@@ -75,6 +121,9 @@ export function CostMatrixSimulator() {
         </div>
         <p className="mt-1 text-sm text-gray-600">
           Alış fiyatı, menşei ve pazaryerine göre anlık net marj ve ROI hesabı
+          <span className="ml-2 font-mono text-xs text-bridge-700">
+            · Canlı kur: {usdTryRate.toFixed(2)} ₺/USD
+          </span>
         </p>
       </div>
 

@@ -1,9 +1,11 @@
 import { withPostgresModule } from "@/lib/db/storage";
 import {
+  memAppendBotLogs,
   memGetTrendyolProducts,
   memListBotLogsByUser,
   memListOrdersByUser,
   memReplaceStoreLiveData,
+  memReplaceStoreOrders,
   memSaveTrendyolProducts,
   memUpsertCatalogFromSync,
 } from "@/lib/db/orders-memory";
@@ -39,6 +41,32 @@ export async function replaceStoreLiveData(
     () => import("@/lib/db/orders-postgres"),
     () => memReplaceStoreLiveData(userId, storeId, orders, logs),
     (pg) => pg.pgReplaceStoreLiveData(userId, storeId, orders, logs)
+  );
+}
+
+export async function replaceStoreOrders(
+  userId: string,
+  storeId: string,
+  orders: Omit<Order, "id">[]
+): Promise<void> {
+  return withPostgresModule(
+    "orders",
+    () => import("@/lib/db/orders-postgres"),
+    () => memReplaceStoreOrders(userId, storeId, orders),
+    (pg) => pg.pgReplaceStoreOrders(userId, storeId, orders)
+  );
+}
+
+export async function appendBotLogs(
+  userId: string,
+  storeId: string,
+  logs: Omit<BotLog, "id">[]
+): Promise<void> {
+  return withPostgresModule(
+    "orders",
+    () => import("@/lib/db/orders-postgres"),
+    () => memAppendBotLogs(userId, storeId, logs),
+    (pg) => pg.pgAppendBotLogs(userId, storeId, logs)
   );
 }
 

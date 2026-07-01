@@ -227,3 +227,28 @@ export async function pgUpdateStoreMetrics(
   const synced = await pgFindStoreById(id, userId);
   return synced ? toPublicStore(synced) : null;
 }
+
+export async function pgListStoresWithAutoSync(): Promise<ConnectedStore[]> {
+  await ensureSchema();
+  const sql = getSql();
+  const rows = await sql`
+    SELECT * FROM connected_stores
+    WHERE auto_sync = true AND status IN ('connected', 'syncing')
+    ORDER BY last_sync_at ASC NULLS FIRST
+    LIMIT 50
+  `;
+  return (rows as StoreRow[]).map(mapStore);
+}
+
+export async function pgListStoresWithAutoReprice(): Promise<ConnectedStore[]> {
+  await ensureSchema();
+  const sql = getSql();
+  const rows = await sql`
+    SELECT * FROM connected_stores
+    WHERE auto_reprice = true
+      AND status = 'connected'
+    ORDER BY updated_at ASC
+    LIMIT 50
+  `;
+  return (rows as StoreRow[]).map(mapStore);
+}
