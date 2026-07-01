@@ -57,15 +57,34 @@ function loadBundledEntries(): GtipEntry[] {
 
   const raw = fs.readFileSync(resolveDataPath(), "utf8");
   const seed = JSON.parse(raw) as GtipSeedFile;
+  const fix = fixMojibake;
   const entries = seed.entries.map((entry) => ({
     ...entry,
-    keywords: Array.isArray(entry.keywords) ? entry.keywords : [],
+    description: fix(entry.description),
+    chapter: fix(entry.chapter),
+    unit: fix(entry.unit),
+    keywords: Array.isArray(entry.keywords)
+      ? entry.keywords.map((kw) => fix(String(kw)))
+      : [],
     year: seed.meta.year,
     source: GTIP_SOURCE,
   }));
 
   g.__marginalBridgeGtipEntries = entries;
   return entries;
+}
+
+function fixMojibake(value: unknown): string {
+  const input = typeof value === "string" ? value : String(value ?? "");
+  // Common UTF-8-as-Latin1 mojibake markers in TR text
+  if (!/[ÃÅ]/.test(input)) return input;
+
+  try {
+    // Re-interpret the current string as latin1 bytes and decode as utf8.
+    return Buffer.from(input, "latin1").toString("utf8");
+  } catch {
+    return input;
+  }
 }
 
 function getMemoryCache(): GtipCacheFile | null {
